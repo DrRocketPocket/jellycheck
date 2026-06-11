@@ -12,7 +12,7 @@
         "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.11.zip",
-        "checksum": "4b5bf5dcb7a4b5c048f1d84dbefe66ac",
+        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
         "timestamp": "2026-06-11 19:45:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.11.zip",
-        "checksum": "4b5bf5dcb7a4b5c048f1d84dbefe66ac",
+        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
         "timestamp": "2026-06-11 19:45:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.11.zip",
-        "checksum": "4b5bf5dcb7a4b5c048f1d84dbefe66ac",
+        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
         "timestamp": "2026-06-11 19:45:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.8.zip",
-        "checksum": "eb519078e981b356f1a758c80c2313a3",
+        "checksum": "56224c80ba75ccdb76bb9264a1065763",
         "timestamp": "2026-06-11 19:45:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.8.zip",
-        "checksum": "eb519078e981b356f1a758c80c2313a3",
+        "checksum": "56224c80ba75ccdb76bb9264a1065763",
         "timestamp": "2026-06-11 19:45:00"
       }
     ]
