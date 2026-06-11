@@ -119,19 +119,79 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                     {
                         Recursive = true,
                         IsPlayed = true,
-                        IncludeItemTypes = new[] { BaseItemKind.Series, BaseItemKind.Season, BaseItemKind.Episode, BaseItemKind.Movie }
+                        IncludeItemTypes = new[] { BaseItemKind.Episode, BaseItemKind.Movie }
                     };
 
                     // Set user on query via reflection (API differs between versions)
                     SetUserOnQuery(query, user);
 
-                    var items = _libraryManager.GetItemList(query);
-                    foreach (var item in items)
+                    var playedItems = _libraryManager.GetItemList(query);
+                    var playedEpisodeIds = new HashSet<Guid>();
+                    var seriesToCheck = new HashSet<Guid>();
+                    var seasonsToCheck = new HashSet<Guid>();
+
+                    foreach (var item in playedItems)
                     {
                         if (item == null) continue;
 
-                        // Add direct item (Episode, Movie, Series, or Season)
+                        // Add direct item (Episode or Movie)
                         AddWatchedItem(watchedMap, item.Id, userId, username, userHasPrimaryImage);
+
+                        // Collect candidate Series and Seasons from played episodes
+                        var seriesIdProp = item.GetType().GetProperty("SeriesId");
+                        if (seriesIdProp != null && seriesIdProp.GetValue(item) is Guid seriesId && seriesId != Guid.Empty)
+                        {
+                            playedEpisodeIds.Add(item.Id);
+                            seriesToCheck.Add(seriesId);
+                        }
+
+                        var seasonIdProp = item.GetType().GetProperty("SeasonId");
+                        if (seasonIdProp != null && seasonIdProp.GetValue(item) is Guid seasonId && seasonId != Guid.Empty)
+                        {
+                            seasonsToCheck.Add(seasonId);
+                        }
+                    }
+
+                    // Verify if candidate Series are fully watched
+                    foreach (var seriesId in seriesToCheck)
+                    {
+                        var series = _libraryManager.GetItemById(seriesId);
+                        if (series == null) continue;
+
+                        var epQuery = new InternalItemsQuery
+                        {
+                            Parent = series,
+                            Recursive = true,
+                            IncludeItemTypes = new[] { BaseItemKind.Episode }
+                        };
+                        SetUserOnQuery(epQuery, user);
+
+                        var allEpisodes = _libraryManager.GetItemList(epQuery);
+                        if (allEpisodes.Count > 0 && allEpisodes.All(ep => ep != null && playedEpisodeIds.Contains(ep.Id)))
+                        {
+                            AddWatchedItem(watchedMap, seriesId, userId, username, userHasPrimaryImage);
+                        }
+                    }
+
+                    // Verify if candidate Seasons are fully watched
+                    foreach (var seasonId in seasonsToCheck)
+                    {
+                        var season = _libraryManager.GetItemById(seasonId);
+                        if (season == null) continue;
+
+                        var epQuery = new InternalItemsQuery
+                        {
+                            Parent = season,
+                            Recursive = true,
+                            IncludeItemTypes = new[] { BaseItemKind.Episode }
+                        };
+                        SetUserOnQuery(epQuery, user);
+
+                        var allEpisodes = _libraryManager.GetItemList(epQuery);
+                        if (allEpisodes.Count > 0 && allEpisodes.All(ep => ep != null && playedEpisodeIds.Contains(ep.Id)))
+                        {
+                            AddWatchedItem(watchedMap, seasonId, userId, username, userHasPrimaryImage);
+                        }
                     }
                 }
             }
