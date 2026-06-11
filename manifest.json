@@ -4,15 +4,47 @@
     "name": "Jellycheck",
     "description": "Circular user avatars overlay showing who has watched what on media posters.",
     "overview": "Jellycheck tracks watched status for movies, series, seasons, and episodes across all users on your server, and overlays their avatars on posters in the web interface with premium animations. Supports custom profile pictures, animated GIFs, and stylish letter avatar fallbacks.",
-    "owner": "Julia",
+    "owner": "DrRocketPocket",
     "category": "UI",
     "versions": [
       {
         "version": "1.0.0.0",
         "changelog": "Initial release of Jellycheck plugin.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.11.zip",
+        "checksum": "e2ac7ed66e16212fd5c4e9e987842e66",
+        "timestamp": "2026-06-11 11:46:00"
+      },
+      {
+        "version": "1.0.0.0",
+        "changelog": "Initial release of Jellycheck plugin.",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.11.zip",
+        "checksum": "e2ac7ed66e16212fd5c4e9e987842e66",
+        "timestamp": "2026-06-11 11:46:00"
+      },
+      {
+        "version": "1.0.0.0",
+        "changelog": "Initial release of Jellycheck plugin.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.11.zip",
+        "checksum": "e2ac7ed66e16212fd5c4e9e987842e66",
+        "timestamp": "2026-06-11 11:46:00"
+      },
+      {
+        "version": "1.0.0.0",
+        "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/Julia/jellycheck/releases/download/v1.0.0.0/Jellycheck.zip",
-        "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.8.zip",
+        "checksum": "e2ac7ed66e16212fd5c4e9e987842e66",
+        "timestamp": "2026-06-11 11:46:00"
+      },
+      {
+        "version": "1.0.0.0",
+        "changelog": "Initial release of Jellycheck plugin.",
+        "targetAbi": "10.7.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.8.zip",
+        "checksum": "e2ac7ed66e16212fd5c4e9e987842e66",
         "timestamp": "2026-06-11 11:46:00"
       }
     ]
