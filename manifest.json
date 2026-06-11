@@ -12,7 +12,7 @@
         "changelog": "Fix: Traverse to parent .card container wrapper before checking fingerprint and rendering overlays.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.8/Jellycheck-10.11.zip",
-        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
+        "checksum": "3cd77f34e181f7ddcae50bc5ddfc5a37",
         "timestamp": "2026-06-11 20:00:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Fix: Traverse to parent .card container wrapper before checking fingerprint and rendering overlays.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.8/Jellycheck-10.11.zip",
-        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
+        "checksum": "3cd77f34e181f7ddcae50bc5ddfc5a37",
         "timestamp": "2026-06-11 20:00:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Fix: Traverse to parent .card container wrapper before checking fingerprint and rendering overlays.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.8/Jellycheck-10.11.zip",
-        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
+        "checksum": "3cd77f34e181f7ddcae50bc5ddfc5a37",
         "timestamp": "2026-06-11 20:00:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Fix: Traverse to parent .card container wrapper before checking fingerprint and rendering overlays.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.8/Jellycheck-10.8.zip",
-        "checksum": "56224c80ba75ccdb76bb9264a1065763",
+        "checksum": "a7cdae0c9080ee0425540779985e11e4",
         "timestamp": "2026-06-11 20:00:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Fix: Traverse to parent .card container wrapper before checking fingerprint and rendering overlays.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.8/Jellycheck-10.8.zip",
-        "checksum": "56224c80ba75ccdb76bb9264a1065763",
+        "checksum": "a7cdae0c9080ee0425540779985e11e4",
         "timestamp": "2026-06-11 20:00:00"
       }
     ]
