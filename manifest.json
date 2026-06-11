@@ -12,7 +12,7 @@
         "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.11.zip",
-        "checksum": "00000000000000000000000000000000",
+        "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
         "timestamp": "2026-06-11 15:30:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.11.zip",
-        "checksum": "00000000000000000000000000000000",
+        "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
         "timestamp": "2026-06-11 15:30:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.11.zip",
-        "checksum": "00000000000000000000000000000000",
+        "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
         "timestamp": "2026-06-11 15:30:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.8.zip",
-        "checksum": "00000000000000000000000000000000",
+        "checksum": "545ad53e8d1584f220c9450d32f00d1b",
         "timestamp": "2026-06-11 15:30:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.8.zip",
-        "checksum": "00000000000000000000000000000000",
+        "checksum": "545ad53e8d1584f220c9450d32f00d1b",
         "timestamp": "2026-06-11 15:30:00"
       }
     ]
