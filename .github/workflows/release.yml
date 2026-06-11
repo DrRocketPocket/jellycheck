@@ -68,11 +68,11 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout main
+          git fetch origin master
+          git checkout master
           git add manifest.json
           git diff --cached --quiet || git commit -m "Update manifest checksums for release [skip ci]"
-          git push origin main
+          git push origin master
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
