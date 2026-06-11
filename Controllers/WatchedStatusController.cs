@@ -130,21 +130,8 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                     {
                         if (item == null) continue;
 
-                        // Add direct item (Episode or Movie)
+                        // Add direct item (Episode, Movie, Series, or Season)
                         AddWatchedItem(watchedMap, item.Id, userId, username, userHasPrimaryImage);
-
-                        // Roll up to parent Series and Seasons if they exist (via reflection for compatibility)
-                        var seriesIdProp = item.GetType().GetProperty("SeriesId");
-                        if (seriesIdProp != null && seriesIdProp.GetValue(item) is Guid seriesId && seriesId != Guid.Empty)
-                        {
-                            AddWatchedItem(watchedMap, seriesId, userId, username, userHasPrimaryImage);
-                        }
-
-                        var seasonIdProp = item.GetType().GetProperty("SeasonId");
-                        if (seasonIdProp != null && seasonIdProp.GetValue(item) is Guid seasonId && seasonId != Guid.Empty)
-                        {
-                            AddWatchedItem(watchedMap, seasonId, userId, username, userHasPrimaryImage);
-                        }
                     }
                 }
             }
