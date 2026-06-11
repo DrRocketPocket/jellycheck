@@ -12,7 +12,7 @@
         "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.11.zip",
-        "checksum": "7987f0f165a90ba70d33ec0b2b42ba4c",
+        "checksum": "c9212acad61e33c89d74234521133c17",
         "timestamp": "2026-06-11 11:46:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.8.zip",
-        "checksum": "7987f0f165a90ba70d33ec0b2b42ba4c",
+        "checksum": "c9212acad61e33c89d74234521133c17",
         "timestamp": "2026-06-11 11:46:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.8.zip",
-        "checksum": "7987f0f165a90ba70d33ec0b2b42ba4c",
+        "checksum": "c9212acad61e33c89d74234521133c17",
         "timestamp": "2026-06-11 11:46:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.8.zip",
-        "checksum": "5b2a2a2d980271226c5f7ca28c3972a7",
+        "checksum": "b92da1d684c40e0fa389ac5245290187",
         "timestamp": "2026-06-11 11:46:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck-10.8.zip",
-        "checksum": "5b2a2a2d980271226c5f7ca28c3972a7",
+        "checksum": "b92da1d684c40e0fa389ac5245290187",
         "timestamp": "2026-06-11 11:46:00"
       }
     ]
