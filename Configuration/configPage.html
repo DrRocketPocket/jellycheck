@@ -144,50 +144,6 @@
             box-shadow: 0 6px 20px rgba(0, 242, 254, 0.45);
         }
 
-        .jellycheck-btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: #ffffff !important;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 12px;
-        }
-
-        .jellycheck-btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.05);
-        }
-
-        .jellycheck-code-box {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 14px;
-            font-family: 'Consolas', 'Fira Code', Monaco, monospace;
-            font-size: 0.9rem;
-            color: #00f2fe;
-            margin: 12px 0;
-            word-break: break-all;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .jellycheck-copy-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: #fff;
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-        }
-
-        .jellycheck-copy-btn:hover {
-            background: rgba(0, 242, 254, 0.2);
-            color: #00f2fe;
-        }
-
         .jellycheck-list {
             margin: 0;
             padding-left: 20px;
@@ -203,6 +159,17 @@
         .jellycheck-list strong {
             color: #fff;
         }
+
+        .jellycheck-alert {
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            color: #00f2fe;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
     </style>
 
     <div class="jellycheck-container">
@@ -215,26 +182,27 @@
             <span class="jellycheck-badge">v1.0.0</span>
         </div>
 
+        <!-- Active notice -->
+        <div class="jellycheck-alert" id="jellycheck-active-notice">
+            ⏳ Loading Jellycheck overlay...
+        </div>
+
         <!-- Grid -->
         <div class="jellycheck-grid">
             <!-- System Status -->
             <div class="jellycheck-card">
                 <h2 class="jellycheck-card-title">
                     <svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.6 20 4 16.4 4 12S7.6 4 12 4 20 7.6 20 12 16.4 20 12 20M13 7H11V9H13V7M13 11H11V17H13V11Z"/></svg>
-                    Auto-Injection Status
+                    Overlay Status
                 </h2>
                 
                 <div class="jellycheck-status-item">
-                    <span class="jellycheck-status-label">Injection State</span>
-                    <span id="jellycheck-inject-state" class="jellycheck-status-value">Checking...</span>
+                    <span class="jellycheck-status-label">Script Loaded</span>
+                    <span id="jellycheck-loaded-state" class="jellycheck-status-value">Checking...</span>
                 </div>
                 <div class="jellycheck-status-item">
-                    <span class="jellycheck-status-label">index.html Location</span>
-                    <span id="jellycheck-index-path" class="jellycheck-status-value text-muted" style="font-size:0.8rem; max-width: 60%; word-break: break-all; text-align: right;">Checking...</span>
-                </div>
-                <div class="jellycheck-status-item">
-                    <span class="jellycheck-status-label">Details / Error</span>
-                    <span id="jellycheck-status-error" class="jellycheck-status-value text-muted" style="font-size:0.85rem; max-width: 60%; text-align: right;">None</span>
+                    <span class="jellycheck-status-label">Method</span>
+                    <span id="jellycheck-method" class="jellycheck-status-value" style="color:#a0a0b0">—</span>
                 </div>
 
                 <div style="margin-top: 24px;">
@@ -242,89 +210,117 @@
                 </div>
             </div>
 
-            <!-- Manual Installation -->
+            <!-- How It Works -->
             <div class="jellycheck-card">
                 <h2 class="jellycheck-card-title">
-                    <svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M12,15.5A2.5,2.5 0 0,1 9.5,13A2.5,2.5 0 0,1 12,10.5A2.5,2.5 0 0,1 14.5,13A2.5,2.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.86,5.08L14.47,2.42C14.43,2.18 14.22,2 13.97,2H9.97C9.72,2 9.51,2.18 9.47,2.42L9.08,5.08C8.47,5.34 7.9,5.66 7.38,6.05L4.89,5.05C4.67,4.96 4.4,5.05 4.28,5.27L2.28,8.73C2.16,8.95 2.21,9.22 2.4,9.37L4.51,11C4.47,11.34 4.45,11.67 4.45,12C4.45,12.33 4.47,12.65 4.51,12.97L2.4,14.63C2.21,14.78 2.16,15.05 2.28,15.27L4.28,18.73C4.4,18.95 4.67,19.04 4.89,18.95L7.38,17.95C7.9,18.34 8.47,18.66 9.08,18.92L9.08,18.92L9.47,21.58C9.51,21.82 9.72,22 9.97,22H13.97C14.22,22 14.43,21.82 14.47,21.58L14.86,18.92C15.47,18.66 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.04 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/></svg>
-                    Manual Setup
+                    <svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M19,19H5V5H19V19M7,7H17V9H7V7M7,11H17V13H7V11M7,15H14V17H7V15Z"/></svg>
+                    How It Works
                 </h2>
-                <p style="margin: 0 0 12px 0; color: #a0a0b0; font-size: 0.95rem; line-height: 1.4;">
-                    If auto-injection fails (e.g. running Jellyfin inside a read-only Docker container), you can load the script manually using any JavaScript injector plugin or browser extension.
-                </p>
-                <span class="jellycheck-status-label">Script URL to Inject:</span>
-                <div class="jellycheck-code-box">
-                    <span id="jellycheck-script-url">/jellycheck/client.js</span>
-                    <button id="jellycheck-copy-btn" class="jellycheck-copy-btn">Copy</button>
-                </div>
-                <div style="font-size: 0.9rem; color: #8e9297; margin-top: 14px;">
-                    Use this URL directly in your preferred injection method (like n00bcodr's <strong>JavaScript Injector</strong> or Tampermonkey).
-                </div>
+                <ul class="jellycheck-list">
+                    <li><strong>Dynamic Watched Database:</strong> The backend reads played state for all users in one fast response.</li>
+                    <li><strong>Avatar Overlay:</strong> Circular avatars appear on posters showing who has watched each title.</li>
+                    <li><strong>Letter Fallback:</strong> If a user has no profile image, a gradient letter avatar is shown instead.</li>
+                    <li><strong>No page refresh needed:</strong> The overlay activates automatically when you visit this page.</li>
+                </ul>
             </div>
-        </div>
-
-        <!-- Documentation Card -->
-        <div class="jellycheck-card" style="margin-bottom: 24px;">
-            <h2 class="jellycheck-card-title">
-                <svg style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M19,19H5V5H19V19M7,7H17V9H7V7M7,11H17V13H7V11M7,15H14V17H7V15Z"/></svg>
-                How It Works
-            </h2>
-            <ul class="jellycheck-list">
-                <li><strong>Dynamic Watched Database:</strong> The backend computes the watch/played state of all Series, Seasons, and Movies for <strong>every user</strong> on the server in a single fast bulk response.</li>
-                <li><strong>Premium Avatars Layout:</strong> The client script locates posters/cards on the page and absolute-positions small user avatars at the top-left of each poster (opposite side of the episodes-remaining badge).</li>
-                <li><strong>Fallback Letter Avatars:</strong> If a user hasn't uploaded a profile image, Jellycheck generates a beautifully styled letter avatar using a unique dynamic gradient generated from the user's name.</li>
-            </ul>
         </div>
     </div>
 
     <script type="text/javascript">
-        (function() {
-            function refreshStatus() {
-                var statusUrl = ApiClient.getUrl('jellycheck/status');
-                ApiClient.getJSON(statusUrl).then(function(status) {
-                    var stateEl = document.getElementById('jellycheck-inject-state');
-                    var pathEl = document.getElementById('jellycheck-index-path');
-                    var errorEl = document.getElementById('jellycheck-status-error');
-                    
-                    if (status.isInjected) {
-                        stateEl.innerText = 'Injected successfully';
-                        stateEl.className = 'jellycheck-status-value jellycheck-status-ok';
-                    } else {
-                        stateEl.innerText = 'Not injected (Needs manual setup)';
-                        stateEl.className = 'jellycheck-status-value jellycheck-status-err';
-                    }
-                    
-                    pathEl.innerText = status.webPath || 'Unknown';
-                    errorEl.innerText = status.error || 'None';
-                }).catch(function(err) {
-                    console.error('Error fetching Jellycheck status:', err);
-                });
+        (function () {
+            var SCRIPT_ID = 'jellycheck-client-script';
 
-                // Set client.js absolute script URL
-                var scriptUrlEl = document.getElementById('jellycheck-script-url');
-                scriptUrlEl.innerText = ApiClient.getUrl('jellycheck/client.js');
+            function getApiBase() {
+                if (window.ApiClient && typeof window.ApiClient.getUrl === 'function') {
+                    return window.ApiClient.getUrl('jellycheck/client.js');
+                }
+                var base = window.location.pathname.split('/web/')[0] || '';
+                return base + '/jellycheck/client.js';
             }
 
-            document.getElementById('jellycheck-refresh-btn').addEventListener('click', function(e) {
-                e.preventDefault();
-                refreshStatus();
-            });
+            function updateStatus(loaded, method) {
+                var loadedEl = document.getElementById('jellycheck-loaded-state');
+                var methodEl = document.getElementById('jellycheck-method');
+                var noticeEl = document.getElementById('jellycheck-active-notice');
 
-            document.getElementById('jellycheck-copy-btn').addEventListener('click', function(e) {
-                e.preventDefault();
-                var text = document.getElementById('jellycheck-script-url').innerText;
-                navigator.clipboard.writeText(text).then(function() {
-                    var btn = document.getElementById('jellycheck-copy-btn');
-                    btn.innerText = 'Copied!';
-                    setTimeout(function() {
-                        btn.innerText = 'Copy';
-                    }, 2000);
+                if (loadedEl) {
+                    if (loaded) {
+                        loadedEl.innerText = 'Active ✓';
+                        loadedEl.className = 'jellycheck-status-value jellycheck-status-ok';
+                    } else {
+                        loadedEl.innerText = 'Not loaded';
+                        loadedEl.className = 'jellycheck-status-value jellycheck-status-err';
+                    }
+                }
+                if (methodEl) methodEl.innerText = method || '—';
+                if (noticeEl) {
+                    if (loaded) {
+                        noticeEl.innerText = '✓ Jellycheck overlay is active. Avatars will appear on media posters across the entire Jellyfin interface.';
+                        noticeEl.style.background = 'rgba(0, 230, 118, 0.08)';
+                        noticeEl.style.borderColor = 'rgba(0, 230, 118, 0.3)';
+                        noticeEl.style.color = '#00e676';
+                    } else {
+                        noticeEl.innerText = '✗ Jellycheck overlay failed to load. Try refreshing this page.';
+                        noticeEl.style.background = 'rgba(255, 82, 82, 0.08)';
+                        noticeEl.style.borderColor = 'rgba(255, 82, 82, 0.3)';
+                        noticeEl.style.color = '#ff5252';
+                    }
+                }
+            }
+
+            function injectScript() {
+                // Already injected?
+                if (document.getElementById(SCRIPT_ID) || window.__jellycheckLoaded) {
+                    updateStatus(true, 'Config page bootstrap (already active)');
+                    return;
+                }
+
+                var scriptUrl = getApiBase();
+                var script = document.createElement('script');
+                script.id = SCRIPT_ID;
+                script.src = scriptUrl;
+                script.onload = function () {
+                    window.__jellycheckLoaded = true;
+                    updateStatus(true, 'Config page bootstrap (dynamic inject)');
+                };
+                script.onerror = function () {
+                    updateStatus(false, 'Script load failed — check server logs');
+                };
+                document.head.appendChild(script);
+            }
+
+            function init() {
+                var page = document.querySelector('#JellycheckConfigPage');
+                if (!page) return;
+
+                page.addEventListener('pageshow', function () {
+                    // Re-check status each time user visits config page
+                    if (window.__jellycheckLoaded) {
+                        updateStatus(true, 'Config page bootstrap (already active)');
+                    } else {
+                        injectScript();
+                    }
                 });
-            });
 
-            // Initial status load when page shows
-            document.querySelector('#JellycheckConfigPage').addEventListener('pageshow', function() {
-                refreshStatus();
-            });
+                document.getElementById('jellycheck-refresh-btn').addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (window.__jellycheckLoaded) {
+                        updateStatus(true, 'Config page bootstrap (already active)');
+                    } else {
+                        injectScript();
+                    }
+                });
+
+                // Run immediately in case pageshow already fired
+                injectScript();
+            }
+
+            // Wait for DOM readiness
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
         })();
     </script>
 </div>

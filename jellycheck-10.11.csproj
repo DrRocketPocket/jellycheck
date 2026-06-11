@@ -1,17 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
  
    <PropertyGroup>
-     <TargetFramework>net6.0</TargetFramework>
+     <TargetFramework>net9.0</TargetFramework>
      <AssemblyName>Jellycheck</AssemblyName>
      <RootNamespace>Jellyfin.Plugin.Jellycheck</RootNamespace>
      <ImplicitUsings>enable</ImplicitUsings>
      <Nullable>enable</Nullable>
      <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <DefineConstants>JELLYFIN_10_11</DefineConstants>
    </PropertyGroup>
  
    <ItemGroup>
-     <PackageReference Include="Jellyfin.Controller" Version="10.8.13" ExcludeAssets="Runtime" />
-     <PackageReference Include="Jellyfin.Model" Version="10.8.13" ExcludeAssets="Runtime" />
+     <PackageReference Include="Jellyfin.Controller" Version="10.11.0" ExcludeAssets="Runtime" />
+     <PackageReference Include="Jellyfin.Model" Version="10.11.0" ExcludeAssets="Runtime" />
    </ItemGroup>
  
    <ItemGroup>

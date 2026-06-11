@@ -3,6 +3,7 @@
 [Oo]bj/
 *.msi
 *.csproj.user
+*.zip
 
 # Local development test container
 docker-test/

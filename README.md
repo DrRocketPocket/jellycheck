@@ -23,3 +23,4 @@ You can install the plugin directly through the Jellyfin dashboard:
 3. Restart your Jellyfin server.
 
 Future builds might contain an option to delete the Shows/Movies after everyone watched them.
+

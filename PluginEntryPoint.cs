@@ -3,12 +3,20 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Configuration;
-using MediaBrowser.Controller.Plugins;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+#if !JELLYFIN_10_11
+using MediaBrowser.Controller.Plugins;
+#endif
 
 namespace Jellyfin.Plugin.Jellycheck
 {
+#if JELLYFIN_10_11
+    public class PluginEntryPoint : IHostedService
+#else
     public class PluginEntryPoint : IServerEntryPoint
+#endif
     {
         private readonly IApplicationPaths _applicationPaths;
         private readonly ILogger<PluginEntryPoint> _logger;
@@ -23,7 +31,26 @@ namespace Jellyfin.Plugin.Jellycheck
         public static string? Error { get; private set; }
         public static string? DetectedWebPath { get; private set; }
 
+#if JELLYFIN_10_11
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            RunInjection();
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+#else
         public Task RunAsync()
+        {
+            RunInjection();
+            return Task.CompletedTask;
+        }
+#endif
+
+        private void RunInjection()
         {
             _logger.LogInformation("Jellycheck plugin entry point running.");
             try
@@ -35,7 +62,7 @@ namespace Jellyfin.Plugin.Jellycheck
                 {
                     Error = "WebPath is empty in IApplicationPaths";
                     _logger.LogWarning("Jellyfin Web path is empty. Auto-injection is disabled.");
-                    return Task.CompletedTask;
+                    return;
                 }
 
                 var indexPath = Path.Combine(webPath, "index.html");
@@ -43,7 +70,7 @@ namespace Jellyfin.Plugin.Jellycheck
                 {
                     Error = $"index.html not found at: {indexPath}";
                     _logger.LogWarning("Jellyfin index.html not found at: {Path}. Auto-injection is disabled.", indexPath);
-                    return Task.CompletedTask;
+                    return;
                 }
 
                 var html = File.ReadAllText(indexPath);
@@ -82,45 +109,12 @@ namespace Jellyfin.Plugin.Jellycheck
                 Error = $"Exception: {ex.Message}";
                 _logger.LogError(ex, "Error occurred during Jellycheck client script injection.");
             }
-
-            return Task.CompletedTask;
         }
 
+#if !JELLYFIN_10_11
         public void Dispose()
         {
-            try
-            {
-                if (string.IsNullOrEmpty(DetectedWebPath)) return;
-                var indexPath = Path.Combine(DetectedWebPath, "index.html");
-                if (File.Exists(indexPath))
-                {
-                    var html = File.ReadAllText(indexPath);
-                    var scriptTag = "<script src=\"/jellycheck/client.js\" defer></script>\n";
-                    var scriptTagNoNewline = "<script src=\"/jellycheck/client.js\" defer></script>";
-
-                    bool modified = false;
-                    if (html.Contains(scriptTag))
-                    {
-                        html = html.Replace(scriptTag, string.Empty);
-                        modified = true;
-                    }
-                    else if (html.Contains(scriptTagNoNewline))
-                    {
-                        html = html.Replace(scriptTagNoNewline, string.Empty);
-                        modified = true;
-                    }
-
-                    if (modified)
-                    {
-                        File.WriteAllText(indexPath, html);
-                        _logger.LogInformation("Removed Jellycheck client script from index.html during shutdown/dispose.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to clean up index.html on shutdown/dispose.");
-            }
         }
+#endif
     }
 }
