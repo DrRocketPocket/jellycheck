@@ -22,33 +22,28 @@ jobs:
             6.0.x
             9.0.x
 
-      - name: Restore dependencies
-        run: |
-          dotnet restore jellycheck.csproj
-          dotnet restore jellycheck-10.11.csproj
-
       - name: Build Jellycheck 10.8 (net6.0)
-        run: dotnet build jellycheck.csproj -c Release --no-restore
+        run: |
+          dotnet publish jellycheck.csproj \
+            -c Release \
+            -o publish/10.8 \
+            --no-self-contained
 
       - name: Build Jellycheck 10.11 (net9.0)
-        run: dotnet build jellycheck-10.11.csproj -c Release --no-restore
+        run: |
+          dotnet publish jellycheck-10.11.csproj \
+            -c Release \
+            -o publish/10.11 \
+            --no-self-contained
 
       - name: Create Release Packages
         run: |
           mkdir -p release-assets
-          
-          # Zip 10.8 version (maintaining Jellycheck.dll name inside the zip)
-          cd bin/Release/net6.0
-          zip -j ../../../release-assets/Jellycheck-10.8.zip Jellycheck.dll
-          cd ../../../
-          
-          # Zip 10.11 version (maintaining Jellycheck.dll name inside the zip)
-          cd bin/Release/net9.0
-          zip -j ../../../release-assets/Jellycheck-10.11.zip Jellycheck.dll
-          cd ../../../
+          cd publish/10.8 && zip -j ../../release-assets/Jellycheck-10.8.zip Jellycheck.dll && cd ../..
+          cd publish/10.11 && zip -j ../../release-assets/Jellycheck-10.11.zip Jellycheck.dll && cd ../..
 
       - name: Calculate Checksums and Update Manifest
-        shell: python
+        shell: python3 {0}
         run: |
           import json
           import hashlib
@@ -61,7 +56,10 @@ jobs:
               return hash_md5.hexdigest()
 
           hash_10_11 = get_md5("release-assets/Jellycheck-10.11.zip")
-          hash_10_8 = get_md5("release-assets/Jellycheck-10.8.zip")
+          hash_10_8  = get_md5("release-assets/Jellycheck-10.8.zip")
+
+          print(f"10.11 checksum: {hash_10_11}")
+          print(f"10.8  checksum: {hash_10_8}")
 
           with open("manifest.json", "r") as f:
               manifest = json.load(f)
@@ -69,13 +67,15 @@ jobs:
           plugin = manifest[0]
           for version_entry in plugin["versions"]:
               abi = version_entry["targetAbi"]
-              if abi in ["10.11.0.0", "10.10.0.0", "10.9.0.0"]:
+              if abi.startswith("10.11") or abi.startswith("10.10") or abi.startswith("10.9"):
                   version_entry["checksum"] = hash_10_11
-              elif abi in ["10.8.0.0", "10.7.0.0"]:
+              elif abi.startswith("10.8") or abi.startswith("10.7"):
                   version_entry["checksum"] = hash_10_8
 
           with open("manifest.json", "w") as f:
               json.dump(manifest, f, indent=2)
+
+          print("Manifest updated.")
 
       - name: Commit and Push Updated Manifest
         run: |
@@ -84,7 +84,7 @@ jobs:
           git fetch origin main
           git checkout main
           git add manifest.json
-          git commit -m "Update manifest checksums for release [skip ci]" || echo "No changes to manifest"
+          git diff --cached --quiet || git commit -m "Update manifest checksums for release [skip ci]"
           git push origin main
 
       - name: Create GitHub Release
