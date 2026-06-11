@@ -1,0 +1,24 @@
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+*.msi
+*.csproj.user
+
+# Local development test container
+docker-test/
+run-test.ps1
+
+# IDE and Editor Files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
