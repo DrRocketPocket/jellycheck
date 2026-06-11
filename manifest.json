@@ -12,7 +12,7 @@
         "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.11.zip",
-        "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
+        "checksum": "b17ce2a59568525e84fe5532e794b0ae",
         "timestamp": "2026-06-11 18:45:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.11.zip",
-        "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
+        "checksum": "b17ce2a59568525e84fe5532e794b0ae",
         "timestamp": "2026-06-11 18:45:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.11.zip",
-        "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
+        "checksum": "b17ce2a59568525e84fe5532e794b0ae",
         "timestamp": "2026-06-11 18:45:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.8.zip",
-        "checksum": "545ad53e8d1584f220c9450d32f00d1b",
+        "checksum": "771d42313e482ff417e836aeb44ae6d8",
         "timestamp": "2026-06-11 18:45:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.8.zip",
-        "checksum": "545ad53e8d1584f220c9450d32f00d1b",
+        "checksum": "771d42313e482ff417e836aeb44ae6d8",
         "timestamp": "2026-06-11 18:45:00"
       }
     ]
