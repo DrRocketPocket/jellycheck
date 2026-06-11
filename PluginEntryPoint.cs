@@ -41,7 +41,6 @@ namespace Jellyfin.Plugin.Jellycheck
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            Cleanup();
             return Task.CompletedTask;
         }
 #else
@@ -113,47 +112,9 @@ namespace Jellyfin.Plugin.Jellycheck
             }
         }
 
-        private void Cleanup()
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(DetectedWebPath)) return;
-                var indexPath = Path.Combine(DetectedWebPath, "index.html");
-                if (File.Exists(indexPath))
-                {
-                    var html = File.ReadAllText(indexPath);
-                    var scriptTag = "<script src=\"/jellycheck/client.js\" defer></script>\n";
-                    var scriptTagNoNewline = "<script src=\"/jellycheck/client.js\" defer></script>";
-
-                    bool modified = false;
-                    if (html.Contains(scriptTag))
-                    {
-                        html = html.Replace(scriptTag, string.Empty);
-                        modified = true;
-                    }
-                    else if (html.Contains(scriptTagNoNewline))
-                    {
-                        html = html.Replace(scriptTagNoNewline, string.Empty);
-                        modified = true;
-                    }
-
-                    if (modified)
-                    {
-                        File.WriteAllText(indexPath, html);
-                        _logger.LogInformation("Removed Jellycheck client script from index.html during shutdown/dispose.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to clean up index.html on shutdown/dispose.");
-            }
-        }
-
 #if !JELLYFIN_10_11
         public void Dispose()
         {
-            Cleanup();
         }
 #endif
     }
