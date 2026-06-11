@@ -203,10 +203,15 @@
 
     function updateCard(card) {
         const itemId = getItemId(card);
-        if (!itemId) return;
+        if (!itemId) {
+            return;
+        }
 
         const normalizedItemId = normalizeId(itemId);
         const users = watchedCache[normalizedItemId] || [];
+
+        // Log general scan of identified cards to verify ID matches
+        log(`Inspecting identified card: ${itemId} (normalized: ${normalizedItemId}). Watchers matched: ${users.length}`);
 
         // Fingerprint watch status of this card, support both Id/id properties
         const fingerprint = users.map(u => u.Id || u.id || '').join(',');
@@ -268,11 +273,20 @@
                 containerTarget.style.position = 'relative';
             }
             containerTarget.appendChild(container);
+            log(`Successfully appended indicators container to card target.`, containerTarget);
+        } else {
+            log(`Could not find a valid container target inside card element.`, card);
         }
     }
 
+    let lastScanCount = -1;
     function updateAllVisibleCards() {
-        document.querySelectorAll('.card, [data-id], [data-itemid]').forEach(updateCard);
+        const cards = document.querySelectorAll('.card, [data-id], [data-itemid]');
+        if (cards.length !== lastScanCount && cards.length > 0) {
+            log(`Found ${cards.length} card elements matching selector in DOM.`);
+            lastScanCount = cards.length;
+        }
+        cards.forEach(updateCard);
     }
 
     // Monitor for DOM changes
