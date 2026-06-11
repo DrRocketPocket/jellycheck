@@ -38,19 +38,38 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
         private object? GetCurrentUser()
         {
             var claimsUser = HttpContext.User;
-            if (claimsUser == null || claimsUser.Identity?.IsAuthenticated != true)
+            if (claimsUser == null)
             {
+                _logger.LogWarning("GetCurrentUser failed: HttpContext.User is null.");
+                return null;
+            }
+            if (claimsUser.Identity?.IsAuthenticated != true)
+            {
+                _logger.LogWarning("GetCurrentUser failed: ClaimsUser.Identity.IsAuthenticated is false.");
                 return null;
             }
 
             var userIdClaim = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                               ?? claimsUser.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            if (string.IsNullOrEmpty(userIdClaim))
             {
+                _logger.LogWarning("GetCurrentUser failed: NameIdentifier/id claim not found.");
+                return null;
+            }
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                _logger.LogWarning("GetCurrentUser failed: NameIdentifier claim '{UserIdClaim}' is not a valid Guid.", userIdClaim);
                 return null;
             }
 
-            return _userManager.GetUserById(userId);
+            var user = _userManager.GetUserById(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("GetCurrentUser failed: User not found in database for ID '{UserId}'.", userId);
+                return null;
+            }
+
+            return user;
         }
 
         [HttpGet("watched")]
