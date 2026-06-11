@@ -49,16 +49,18 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                 return null;
             }
 
-            var userIdClaim = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-                              ?? claimsUser.FindFirst("id")?.Value;
+            var userIdClaim = claimsUser.FindFirst("Jellyfin-UserId")?.Value 
+                              ?? claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                              ?? claimsUser.FindFirst("id")?.Value
+                              ?? claimsUser.FindFirst("UserId")?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
             {
-                _logger.LogWarning("GetCurrentUser failed: NameIdentifier/id claim not found.");
+                _logger.LogWarning("GetCurrentUser failed: NameIdentifier/id/Jellyfin-UserId claim not found.");
                 return null;
             }
             if (!Guid.TryParse(userIdClaim, out var userId))
             {
-                _logger.LogWarning("GetCurrentUser failed: NameIdentifier claim '{UserIdClaim}' is not a valid Guid.", userIdClaim);
+                _logger.LogWarning("GetCurrentUser failed: User ID claim '{UserIdClaim}' is not a valid Guid.", userIdClaim);
                 return null;
             }
 
