@@ -74,6 +74,26 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             return user;
         }
 
+        private void AddWatchedItem(Dictionary<Guid, List<UserDto>> watchedMap, Guid itemId, Guid userId, string username, bool userHasPrimaryImage)
+        {
+            if (itemId == Guid.Empty) return;
+
+            if (!watchedMap.ContainsKey(itemId))
+            {
+                watchedMap[itemId] = new List<UserDto>();
+            }
+
+            if (!watchedMap[itemId].Any(u => u.Id == userId))
+            {
+                watchedMap[itemId].Add(new UserDto
+                {
+                    Id = userId,
+                    Name = username,
+                    HasPrimaryImage = userHasPrimaryImage
+                });
+            }
+        }
+
         [HttpGet("watched")]
         public ActionResult<Dictionary<Guid, List<UserDto>>> GetWatchedItems()
         {
@@ -93,6 +113,7 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
 
                     var userId = GetUserId(user);
                     var username = GetUsername(user);
+                    var userHasPrimaryImage = UserHasPrimaryImage(user, username);
 
                     var query = new InternalItemsQuery
                     {
@@ -107,17 +128,23 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                     var items = _libraryManager.GetItemList(query);
                     foreach (var item in items)
                     {
-                        if (!watchedMap.ContainsKey(item.Id))
+                        if (item == null) continue;
+
+                        // Add direct item (Episode or Movie)
+                        AddWatchedItem(watchedMap, item.Id, userId, username, userHasPrimaryImage);
+
+                        // Roll up to parent Series and Seasons if they exist (via reflection for compatibility)
+                        var seriesIdProp = item.GetType().GetProperty("SeriesId");
+                        if (seriesIdProp != null && seriesIdProp.GetValue(item) is Guid seriesId && seriesId != Guid.Empty)
                         {
-                            watchedMap[item.Id] = new List<UserDto>();
+                            AddWatchedItem(watchedMap, seriesId, userId, username, userHasPrimaryImage);
                         }
 
-                        watchedMap[item.Id].Add(new UserDto
+                        var seasonIdProp = item.GetType().GetProperty("SeasonId");
+                        if (seasonIdProp != null && seasonIdProp.GetValue(item) is Guid seasonId && seasonId != Guid.Empty)
                         {
-                            Id = userId,
-                            Name = username,
-                            HasPrimaryImage = UserHasPrimaryImage(user, username)
-                        });
+                            AddWatchedItem(watchedMap, seasonId, userId, username, userHasPrimaryImage);
+                        }
                     }
                 }
             }

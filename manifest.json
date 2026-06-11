@@ -8,44 +8,44 @@
     "category": "UI",
     "versions": [
       {
-        "version": "1.0.0.6",
-        "changelog": "Fix: Add verbose card matching, extraction, and target rendering console logging.",
+        "version": "1.0.0.7",
+        "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.6/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.11.zip",
         "checksum": "4b5bf5dcb7a4b5c048f1d84dbefe66ac",
-        "timestamp": "2026-06-11 19:30:00"
+        "timestamp": "2026-06-11 19:45:00"
       },
       {
-        "version": "1.0.0.6",
-        "changelog": "Fix: Add verbose card matching, extraction, and target rendering console logging.",
+        "version": "1.0.0.7",
+        "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.6/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.11.zip",
         "checksum": "4b5bf5dcb7a4b5c048f1d84dbefe66ac",
-        "timestamp": "2026-06-11 19:30:00"
+        "timestamp": "2026-06-11 19:45:00"
       },
       {
-        "version": "1.0.0.6",
-        "changelog": "Fix: Add verbose card matching, extraction, and target rendering console logging.",
+        "version": "1.0.0.7",
+        "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.6/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.11.zip",
         "checksum": "4b5bf5dcb7a4b5c048f1d84dbefe66ac",
-        "timestamp": "2026-06-11 19:30:00"
+        "timestamp": "2026-06-11 19:45:00"
       },
       {
-        "version": "1.0.0.6",
-        "changelog": "Fix: Add verbose card matching, extraction, and target rendering console logging.",
+        "version": "1.0.0.7",
+        "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.6/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.8.zip",
         "checksum": "eb519078e981b356f1a758c80c2313a3",
-        "timestamp": "2026-06-11 19:30:00"
+        "timestamp": "2026-06-11 19:45:00"
       },
       {
-        "version": "1.0.0.6",
-        "changelog": "Fix: Add verbose card matching, extraction, and target rendering console logging.",
+        "version": "1.0.0.7",
+        "changelog": "Fix: Roll up watched status from episodes to parent TV series and season IDs.",
         "targetAbi": "10.7.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.6/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.7/Jellycheck-10.8.zip",
         "checksum": "eb519078e981b356f1a758c80c2313a3",
-        "timestamp": "2026-06-11 19:30:00"
+        "timestamp": "2026-06-11 19:45:00"
       }
     ]
   }
