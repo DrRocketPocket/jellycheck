@@ -4,14 +4,30 @@
     "name": "Jellycheck",
     "description": "Circular user avatars overlay showing who has watched what on media posters.",
     "overview": "Jellycheck tracks watched status for movies, series, seasons, and episodes across all users on your server, and overlays their avatars on posters in the web interface with premium animations. Supports custom profile pictures, animated GIFs, and stylish letter avatar fallbacks.",
-    "owner": "Julia",
+    "owner": "DrRocketPocket",
     "category": "UI",
     "versions": [
+      {
+        "version": "1.0.1.0",
+        "changelog": "v1.0.1.0 release.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.1.0/Jellycheck-10.11.zip",
+        "checksum": "479cc9893ff8b90e9a0296e56302d0719300d81c3395f1edc6662c6f0f342358",
+        "timestamp": "2026-06-11 12:04:00"
+      },
+      {
+        "version": "1.0.1.0",
+        "changelog": "v1.0.1.0 release.",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.1.0/Jellycheck-10.8.zip",
+        "checksum": "8531cfee573bbc0cb48d048bfb6e3764dd2afa66ee6e321f2dab08a737109816",
+        "timestamp": "2026-06-11 12:04:00"
+      },
       {
         "version": "1.0.0.0",
         "changelog": "Initial release of Jellycheck plugin.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/Julia/jellycheck/releases/download/v1.0.0.0/Jellycheck.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.0/Jellycheck.zip",
         "checksum": "d41d8cd98f00b204e9800998ecf8427e",
         "timestamp": "2026-06-11 11:46:00"
       }
