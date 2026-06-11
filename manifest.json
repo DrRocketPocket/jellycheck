@@ -8,44 +8,44 @@
     "category": "UI",
     "versions": [
       {
-        "version": "1.0.0.3",
-        "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
+        "version": "1.0.0.4",
+        "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.11.zip",
         "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
-        "timestamp": "2026-06-11 15:30:00"
+        "timestamp": "2026-06-11 18:45:00"
       },
       {
-        "version": "1.0.0.3",
-        "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
+        "version": "1.0.0.4",
+        "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.11.zip",
         "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
-        "timestamp": "2026-06-11 15:30:00"
+        "timestamp": "2026-06-11 18:45:00"
       },
       {
-        "version": "1.0.0.3",
-        "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
+        "version": "1.0.0.4",
+        "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.11.zip",
         "checksum": "a7132f84eed66b41e3e3d23b8df6fdc5",
-        "timestamp": "2026-06-11 15:30:00"
+        "timestamp": "2026-06-11 18:45:00"
       },
       {
-        "version": "1.0.0.3",
-        "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
+        "version": "1.0.0.4",
+        "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.8.zip",
         "checksum": "545ad53e8d1584f220c9450d32f00d1b",
-        "timestamp": "2026-06-11 15:30:00"
+        "timestamp": "2026-06-11 18:45:00"
       },
       {
-        "version": "1.0.0.3",
-        "changelog": "Fix: Authentication 401 and relative path issues for subpath installs.",
+        "version": "1.0.0.4",
+        "changelog": "Fix: DOM card selector, data attributes, overlays and indicators rendering on Jellyfin 10.11+.",
         "targetAbi": "10.7.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.3/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.4/Jellycheck-10.8.zip",
         "checksum": "545ad53e8d1584f220c9450d32f00d1b",
-        "timestamp": "2026-06-11 15:30:00"
+        "timestamp": "2026-06-11 18:45:00"
       }
     ]
   }

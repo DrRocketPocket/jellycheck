@@ -75,8 +75,63 @@
         return `${basePath}/${subPath}`;
     }
 
+    function log(message, ...args) {
+        console.log(`[Jellycheck] ${message}`, ...args);
+    }
+
     function normalizeId(id) {
         return id ? id.replace(/-/g, '').toLowerCase() : '';
+    }
+
+    function getItemId(card) {
+        // Try direct data attributes or dataset properties
+        let id = card.getAttribute('data-id') || 
+                 card.getAttribute('data-itemid') || 
+                 (card.dataset && (card.dataset.id || card.dataset.itemid));
+        
+        if (id) return id;
+
+        // Try looking at any child link (anchor element)
+        const link = card.querySelector('a[href]');
+        if (link) {
+            const href = link.getAttribute('href');
+            if (href) {
+                // Try to extract 36-char UUID (with dashes)
+                const uuidMatch = href.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+                if (uuidMatch) {
+                    return uuidMatch[0];
+                }
+                // Try to extract 32-char hex string (without dashes)
+                const hexMatch = href.match(/[0-9a-f]{32}/i);
+                if (hexMatch) {
+                    return hexMatch[0];
+                }
+                // Fallback: search params if it's formatted as ?id=...
+                const idParamMatch = href.match(/[?&]id=([^&]+)/i);
+                if (idParamMatch) {
+                    return idParamMatch[1];
+                }
+            }
+        }
+
+        // Try parent or self href if card is an anchor
+        const href = card.getAttribute('href');
+        if (href) {
+            const uuidMatch = href.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+            if (uuidMatch) {
+                return uuidMatch[0];
+            }
+            const hexMatch = href.match(/[0-9a-f]{32}/i);
+            if (hexMatch) {
+                return hexMatch[0];
+            }
+            const idParamMatch = href.match(/[?&]id=([^&]+)/i);
+            if (idParamMatch) {
+                return idParamMatch[1];
+            }
+        }
+
+        return null;
     }
 
     async function fetchWatchedData() {
@@ -105,6 +160,7 @@
                 }
             }
             
+            log(`Fetched watched data: loaded ${Object.keys(watchedCache).length} items.`);
             lastFetchTime = Date.now();
             updateAllVisibleCards();
         } catch (err) {
@@ -146,7 +202,7 @@
     }
 
     function updateCard(card) {
-        const itemId = card.getAttribute('data-id');
+        const itemId = getItemId(card);
         if (!itemId) return;
 
         const normalizedItemId = normalizeId(itemId);
@@ -174,6 +230,7 @@
         }
 
         card.setAttribute('data-jellycheck-fingerprint', fingerprint);
+        log(`Applying indicators to item ${itemId} (matched ${users.length} user(s): ${users.map(u => u.Name || u.name).join(', ')})`);
 
         // Create container
         const container = document.createElement('div');
@@ -204,7 +261,7 @@
         });
 
         // Target image container directly to ensure it renders on top of the poster artwork
-        const containerTarget = card.querySelector('.cardImageContainer') || card.querySelector('.cardScalable') || card.querySelector('.cardBox') || card;
+        const containerTarget = card.querySelector('.cardOverlayContainer') || card.querySelector('.cardImageContainer') || card.querySelector('.cardScalable') || card.querySelector('.cardBox') || card;
         if (containerTarget) {
             const style = window.getComputedStyle(containerTarget);
             if (style.position === 'static') {
@@ -215,7 +272,7 @@
     }
 
     function updateAllVisibleCards() {
-        document.querySelectorAll('.card').forEach(updateCard);
+        document.querySelectorAll('.card, [data-id], [data-itemid]').forEach(updateCard);
     }
 
     // Monitor for DOM changes
@@ -224,7 +281,9 @@
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 if (node.nodeType === Node.ELEMENT_NODE) {
-                    if (node.classList.contains('card') || node.querySelector('.card')) {
+                    if (node.classList.contains('card') || node.querySelector('.card') || 
+                        node.hasAttribute('data-id') || node.hasAttribute('data-itemid') || 
+                        node.querySelector('[data-id], [data-itemid]')) {
                         hasNewCards = true;
                         break;
                     }
@@ -253,6 +312,7 @@
     // Active polling for ApiClient to resolve startup race condition
     function init() {
         if (window.ApiClient) {
+            log('ApiClient resolved. Starting monitored watched status sync.');
             fetchWatchedData();
         } else {
             setTimeout(init, 100);
