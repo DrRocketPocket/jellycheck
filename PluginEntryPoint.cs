@@ -74,7 +74,16 @@ namespace Jellyfin.Plugin.Jellycheck
                 }
 
                 var html = File.ReadAllText(indexPath);
-                var scriptTag = "<script src=\"/jellycheck/client.js\" defer></script>";
+                var oldScriptTag = "<script src=\"/jellycheck/client.js\" defer></script>";
+                var newScriptTag = "<script src=\"../jellycheck/client.js\" defer></script>";
+
+                bool modified = false;
+                if (html.Contains(oldScriptTag))
+                {
+                    _logger.LogInformation("Updating Jellycheck script tag path in index.html");
+                    html = html.Replace(oldScriptTag, newScriptTag);
+                    modified = true;
+                }
 
                 if (!html.Contains("jellycheck/client.js"))
                 {
@@ -82,10 +91,8 @@ namespace Jellyfin.Plugin.Jellycheck
                     var bodyIndex = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
                     if (bodyIndex != -1)
                     {
-                        html = html.Insert(bodyIndex, scriptTag + "\n");
-                        File.WriteAllText(indexPath, html);
-                        IsInjected = true;
-                        _logger.LogInformation("Jellycheck client script injected successfully.");
+                        html = html.Insert(bodyIndex, newScriptTag + "\n");
+                        modified = true;
                     }
                     else
                     {
@@ -93,11 +100,14 @@ namespace Jellyfin.Plugin.Jellycheck
                         _logger.LogWarning("Could not find closing </body> tag in index.html. Auto-injection failed.");
                     }
                 }
-                else
+
+                if (modified)
                 {
-                    IsInjected = true;
-                    _logger.LogInformation("Jellycheck client script is already injected in: {Path}", indexPath);
+                    File.WriteAllText(indexPath, html);
+                    _logger.LogInformation("Jellycheck client script injected/updated successfully.");
                 }
+
+                IsInjected = html.Contains("jellycheck/client.js");
             }
             catch (UnauthorizedAccessException uae)
             {
