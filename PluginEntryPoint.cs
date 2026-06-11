@@ -3,12 +3,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 #if !JELLYFIN_10_11
 using MediaBrowser.Controller.Plugins;
-#else
-using Microsoft.Extensions.Hosting;
 #endif
 
 namespace Jellyfin.Plugin.Jellycheck
