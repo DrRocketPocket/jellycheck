@@ -75,60 +75,40 @@
         return `${basePath}/${subPath}`;
     }
 
-    function log(message, ...args) {
-        console.log(`[Jellycheck] ${message}`, ...args);
-    }
-
     function normalizeId(id) {
         return id ? id.replace(/-/g, '').toLowerCase() : '';
     }
 
-    function getItemId(card) {
-        // Try direct data attributes or dataset properties
-        let id = card.getAttribute('data-id') || 
-                 card.getAttribute('data-itemid') || 
-                 (card.dataset && (card.dataset.id || card.dataset.itemid));
-        
-        if (id) return id;
-
-        // Try looking at any child link (anchor element)
-        const link = card.querySelector('a[href]');
-        if (link) {
-            const href = link.getAttribute('href');
-            if (href) {
-                // Try to extract 36-char UUID (with dashes)
-                const uuidMatch = href.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-                if (uuidMatch) {
-                    return uuidMatch[0];
-                }
-                // Try to extract 32-char hex string (without dashes)
-                const hexMatch = href.match(/[0-9a-f]{32}/i);
-                if (hexMatch) {
-                    return hexMatch[0];
-                }
-                // Fallback: search params if it's formatted as ?id=...
-                const idParamMatch = href.match(/[?&]id=([^&]+)/i);
-                if (idParamMatch) {
-                    return idParamMatch[1];
-                }
-            }
+    /**
+     * Extract the Jellyfin item ID from within a .cardBox element.
+     * Looks at child elements for data-id / data-itemid attributes,
+     * then falls back to parsing href links.
+     */
+    function getItemIdFromCardBox(cardBox) {
+        // Try data attributes on any descendant
+        const dataEl = cardBox.querySelector('[data-id]') || cardBox.querySelector('[data-itemid]');
+        if (dataEl) {
+            const id = dataEl.getAttribute('data-id') || dataEl.getAttribute('data-itemid');
+            if (id) return id;
         }
 
-        // Try parent or self href if card is an anchor
-        const href = card.getAttribute('href');
-        if (href) {
-            const uuidMatch = href.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-            if (uuidMatch) {
-                return uuidMatch[0];
-            }
-            const hexMatch = href.match(/[0-9a-f]{32}/i);
-            if (hexMatch) {
-                return hexMatch[0];
-            }
-            const idParamMatch = href.match(/[?&]id=([^&]+)/i);
-            if (idParamMatch) {
-                return idParamMatch[1];
-            }
+        // Fallback: parse href from any link inside the card
+        const links = cardBox.querySelectorAll('a[href]');
+        for (const link of links) {
+            const href = link.getAttribute('href');
+            if (!href) continue;
+
+            // Try 32-char hex (dashless GUID)
+            const hexMatch = href.match(/[?&]id=([0-9a-f]{32})/i);
+            if (hexMatch) return hexMatch[1];
+
+            // Try 36-char UUID (dashed GUID)
+            const uuidMatch = href.match(/[?&]id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+            if (uuidMatch) return uuidMatch[1];
+
+            // Try any 32-char hex in path
+            const pathHex = href.match(/\/([0-9a-f]{32})(?:[?&#/]|$)/i);
+            if (pathHex) return pathHex[1];
         }
 
         return null;
@@ -152,7 +132,7 @@
                 data = await response.json();
             }
             
-            // Normalize cache keys
+            // Normalize cache keys (strip dashes, lowercase)
             watchedCache = {};
             if (data) {
                 for (const key in data) {
@@ -160,7 +140,6 @@
                 }
             }
             
-            log(`Fetched watched data: loaded ${Object.keys(watchedCache).length} items.`);
             lastFetchTime = Date.now();
             updateAllVisibleCards();
         } catch (err) {
@@ -201,46 +180,33 @@
         return url;
     }
 
-    function updateCard(cardElement) {
-        const itemId = getItemId(cardElement);
-        if (!itemId) {
-            return;
-        }
-
-        // Traverse up to find the actual card container wrapper
-        const card = cardElement.closest('.card') || cardElement.closest('.cardBox') || cardElement;
+    function updateCard(cardBox) {
+        const itemId = getItemIdFromCardBox(cardBox);
+        if (!itemId) return;
 
         const normalizedItemId = normalizeId(itemId);
         const users = watchedCache[normalizedItemId] || [];
 
-        // Log general scan of identified cards to verify ID matches
-        log(`Inspecting identified card: ${itemId} (normalized: ${normalizedItemId}). Watchers matched: ${users.length}`);
+        // Fingerprint: comma-joined user IDs to detect changes
+        const fingerprint = users.map(u => String(u.Id || u.id || '')).join(',');
 
-        // Fingerprint watch status of this card, support both Id/id properties
-        const fingerprint = users.map(u => u.Id || u.id || '').join(',');
-        
-        const existing = card.querySelector('.jellycheck-indicators');
-        const currentFingerprint = card.getAttribute('data-jellycheck-fingerprint');
+        const existing = cardBox.querySelector('.jellycheck-indicators');
+        const currentFingerprint = cardBox.getAttribute('data-jellycheck-fp');
 
         // Skip if already up-to-date
-        if (existing && currentFingerprint === fingerprint) {
-            return;
-        }
+        if (existing && currentFingerprint === fingerprint) return;
 
-        // Clean up old indicators if they exist but are outdated
-        if (existing) {
-            existing.remove();
-        }
+        // Clean up old indicators
+        if (existing) existing.remove();
 
         if (users.length === 0) {
-            card.removeAttribute('data-jellycheck-fingerprint');
+            cardBox.removeAttribute('data-jellycheck-fp');
             return;
         }
 
-        card.setAttribute('data-jellycheck-fingerprint', fingerprint);
-        log(`Applying indicators to item ${itemId} (matched ${users.length} user(s): ${users.map(u => u.Name || u.name).join(', ')})`);
+        cardBox.setAttribute('data-jellycheck-fp', fingerprint);
 
-        // Create container
+        // Create indicators container
         const container = document.createElement('div');
         container.className = 'jellycheck-indicators';
 
@@ -268,39 +234,36 @@
             container.appendChild(avatar);
         });
 
-        // Target image container directly to ensure it renders on top of the poster artwork
-        const containerTarget = card.querySelector('.cardOverlayContainer') || card.querySelector('.cardImageContainer') || card.querySelector('.cardScalable') || card.querySelector('.cardBox') || card;
-        if (containerTarget) {
-            const style = window.getComputedStyle(containerTarget);
-            if (style.position === 'static') {
-                containerTarget.style.position = 'relative';
-            }
-            containerTarget.appendChild(container);
-            log(`Successfully appended indicators container to card target.`, containerTarget);
-        } else {
-            log(`Could not find a valid container target inside card element.`, card);
+        // Find the poster image area within the card box
+        const imageContainer = cardBox.querySelector('.cardImageContainer')
+            || cardBox.querySelector('.cardScalable')
+            || cardBox;
+
+        // Ensure the target has relative positioning for absolute children
+        const computedStyle = window.getComputedStyle(imageContainer);
+        if (computedStyle.position === 'static') {
+            imageContainer.style.position = 'relative';
         }
+        // Prevent clipping of the absolutely-positioned indicators
+        imageContainer.style.overflow = 'visible';
+
+        imageContainer.appendChild(container);
     }
 
-    let lastScanCount = -1;
     function updateAllVisibleCards() {
-        const cards = document.querySelectorAll('.card, [data-id], [data-itemid]');
-        if (cards.length !== lastScanCount && cards.length > 0) {
-            log(`Found ${cards.length} card elements matching selector in DOM.`);
-            lastScanCount = cards.length;
-        }
+        // Select actual card wrapper elements — NOT the <a> text links
+        const cards = document.querySelectorAll('.cardBox');
         cards.forEach(updateCard);
     }
 
-    // Monitor for DOM changes
+    // Monitor for DOM changes (new cards added via SPA navigation or virtual scrolling)
     const observer = new MutationObserver((mutations) => {
         let hasNewCards = false;
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
                 if (node.nodeType === Node.ELEMENT_NODE) {
-                    if (node.classList.contains('card') || node.querySelector('.card') || 
-                        node.hasAttribute('data-id') || node.hasAttribute('data-itemid') || 
-                        node.querySelector('[data-id], [data-itemid]')) {
+                    if (node.classList && (node.classList.contains('cardBox') || node.classList.contains('card')) ||
+                        node.querySelector && node.querySelector('.cardBox')) {
                         hasNewCards = true;
                         break;
                     }
@@ -321,18 +284,18 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     // Periodic scanner to catch delayed rendering / SPA navigation changes
+    // 2 second interval — MutationObserver handles immediate additions
     setInterval(() => {
         if (document.hidden) return;
         updateAllVisibleCards();
-    }, 500);
+    }, 2000);
 
-    // Active polling for ApiClient to resolve startup race condition
+    // Wait for ApiClient to become available, then fetch data
     function init() {
         if (window.ApiClient) {
-            log('ApiClient resolved. Starting monitored watched status sync.');
             fetchWatchedData();
         } else {
-            setTimeout(init, 100);
+            setTimeout(init, 200);
         }
     }
     init();
