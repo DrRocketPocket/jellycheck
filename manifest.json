@@ -12,7 +12,7 @@
         "changelog": "Fix: Target cardBox elements instead of text links, fix DOM clipping, and remove console log spam.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.9/Jellycheck-10.11.zip",
-        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
+        "checksum": "e8b27fa08f7b88329bb0191a5ae402af",
         "timestamp": "2026-06-11 20:30:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Fix: Target cardBox elements instead of text links, fix DOM clipping, and remove console log spam.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.9/Jellycheck-10.11.zip",
-        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
+        "checksum": "e8b27fa08f7b88329bb0191a5ae402af",
         "timestamp": "2026-06-11 20:30:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Fix: Target cardBox elements instead of text links, fix DOM clipping, and remove console log spam.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.9/Jellycheck-10.11.zip",
-        "checksum": "15fc82d6ae4fac9e32baa185b1ed3306",
+        "checksum": "e8b27fa08f7b88329bb0191a5ae402af",
         "timestamp": "2026-06-11 20:30:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Fix: Target cardBox elements instead of text links, fix DOM clipping, and remove console log spam.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.9/Jellycheck-10.8.zip",
-        "checksum": "56224c80ba75ccdb76bb9264a1065763",
+        "checksum": "edb3dd68382080a31d37f20353566a75",
         "timestamp": "2026-06-11 20:30:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Fix: Target cardBox elements instead of text links, fix DOM clipping, and remove console log spam.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.9/Jellycheck-10.8.zip",
-        "checksum": "56224c80ba75ccdb76bb9264a1065763",
+        "checksum": "edb3dd68382080a31d37f20353566a75",
         "timestamp": "2026-06-11 20:30:00"
       }
     ]
