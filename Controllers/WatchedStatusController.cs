@@ -153,7 +153,6 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                 return StatusCode(500, "Internal server error occurred while retrieving the client script.");
             }
         }
-
         [HttpGet("status")]
         public IActionResult GetStatus()
         {
@@ -161,11 +160,6 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             if (currentUser == null)
             {
                 return Unauthorized();
-            }
-
-            if (!IsAdmin(currentUser))
-            {
-                return Forbid();
             }
 
             return Ok(new
