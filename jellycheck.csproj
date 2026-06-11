@@ -1,22 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <AssemblyName>Jellycheck</AssemblyName>
-    <RootNamespace>Jellyfin.Plugin.Jellycheck</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.8.13" ExcludeAssets="Runtime" />
-    <PackageReference Include="Jellyfin.Model" Version="10.8.13" ExcludeAssets="Runtime" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Configuration/configPage.html" />
-    <EmbeddedResource Include="Client/client.js" />
-  </ItemGroup>
-
-</Project>
+ 
+   <PropertyGroup>
+     <TargetFramework>net6.0</TargetFramework>
+     <AssemblyName>Jellycheck</AssemblyName>
+     <RootNamespace>Jellyfin.Plugin.Jellycheck</RootNamespace>
+     <ImplicitUsings>enable</ImplicitUsings>
+     <Nullable>enable</Nullable>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+   </PropertyGroup>
+ 
+   <ItemGroup>
+     <PackageReference Include="Jellyfin.Controller" Version="10.8.13" ExcludeAssets="Runtime" />
+     <PackageReference Include="Jellyfin.Model" Version="10.8.13" ExcludeAssets="Runtime" />
+   </ItemGroup>
+ 
+   <ItemGroup>
+     <EmbeddedResource Include="Configuration/configPage.html" />
+     <EmbeddedResource Include="Client/client.js" />
+   </ItemGroup>
+ 
+ </Project>

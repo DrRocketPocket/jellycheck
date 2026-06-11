@@ -7,10 +7,8 @@ using Microsoft.Extensions.Logging;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Entities;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Common.Configuration;
-
 using Microsoft.AspNetCore.Authorization;
 
 namespace Jellyfin.Plugin.Jellycheck.Controllers
@@ -29,12 +27,12 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             IUserManager userManager,
             ILibraryManager libraryManager,
             IApplicationPaths applicationPaths,
-            ILogger<WatchedStatusController> _logger)
+            ILogger<WatchedStatusController> logger)
         {
             _userManager = userManager;
             _libraryManager = libraryManager;
             _applicationPaths = applicationPaths;
-            this._logger = _logger;
+            _logger = logger;
         }
 
         [HttpGet("watched")]
@@ -49,18 +47,23 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             var watchedMap = new Dictionary<Guid, List<UserDto>>();
             try
             {
-                var users = GetUsers();
-                foreach (var userObj in users)
+                var users = GetAllUsers();
+                foreach (var user in users)
                 {
-                    if (userObj == null) continue;
-                    var user = (Jellyfin.Data.Entities.User)userObj;
-                    
-                    var query = new InternalItemsQuery(user)
+                    if (user == null) continue;
+
+                    var userId = GetUserId(user);
+                    var username = GetUsername(user);
+
+                    var query = new InternalItemsQuery
                     {
                         Recursive = true,
                         IsPlayed = true,
                         IncludeItemTypes = new[] { BaseItemKind.Series, BaseItemKind.Season, BaseItemKind.Episode, BaseItemKind.Movie }
                     };
+
+                    // Set user on query via reflection (API differs between versions)
+                    SetUserOnQuery(query, user);
 
                     var items = _libraryManager.GetItemList(query);
                     foreach (var item in items)
@@ -72,9 +75,9 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
 
                         watchedMap[item.Id].Add(new UserDto
                         {
-                            Id = user.Id,
-                            Name = user.Username,
-                            HasPrimaryImage = UserHasPrimaryImage(user)
+                            Id = userId,
+                            Name = username,
+                            HasPrimaryImage = UserHasPrimaryImage(user, username)
                         });
                     }
                 }
@@ -135,83 +138,106 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             });
         }
 
-        private IEnumerable<object> GetUsers()
+        private IEnumerable<object> GetAllUsers()
         {
-            // Try GetUsers() first (Jellyfin 10.11+)
+            // Try GetUsers() first (available in various versions)
             var getUsersMethod = _userManager.GetType().GetMethod("GetUsers", Type.EmptyTypes);
             if (getUsersMethod != null)
             {
-                return (IEnumerable<object>)getUsersMethod.Invoke(_userManager, null)!;
+                var result = getUsersMethod.Invoke(_userManager, null);
+                if (result is IEnumerable<object> users) return users;
+                // Handle IEnumerable<T> where T isn't object
+                if (result != null)
+                {
+                    var enumerable = result as System.Collections.IEnumerable;
+                    if (enumerable != null)
+                        return enumerable.Cast<object>();
+                }
             }
 
-            // Fallback to Users property (Jellyfin < 10.11)
+            // Fallback to Users property
             var usersProp = _userManager.GetType().GetProperty("Users");
             if (usersProp != null)
             {
-                return (IEnumerable<object>)usersProp.GetValue(_userManager)!;
-            }
-
-            // Fallback to GetAllUsers()
-            var getAllUsersMethod = _userManager.GetType().GetMethod("GetAllUsers", Type.EmptyTypes);
-            if (getAllUsersMethod != null)
-            {
-                return (IEnumerable<object>)getAllUsersMethod.Invoke(_userManager, null)!;
+                var val = usersProp.GetValue(_userManager);
+                if (val is IEnumerable<object> usersEnum) return usersEnum;
+                if (val is System.Collections.IEnumerable ie) return ie.Cast<object>();
             }
 
             return Array.Empty<object>();
         }
 
-        private bool UserHasPrimaryImage(object userObj)
+        private Guid GetUserId(object user)
         {
-            var user = (Jellyfin.Data.Entities.User)userObj;
-            if (string.IsNullOrEmpty(user.Username)) return false;
+            var idProp = user.GetType().GetProperty("Id");
+            if (idProp != null && idProp.GetValue(user) is Guid id) return id;
+            return Guid.Empty;
+        }
 
-            // Security check: validate that Username contains no path traversal sequences to prevent file checks outside the user directory
-            if (user.Username.Contains('/') || user.Username.Contains('\\') || user.Username.Contains(".."))
+        private string GetUsername(object user)
+        {
+            var usernameProp = user.GetType().GetProperty("Username");
+            if (usernameProp != null && usernameProp.GetValue(user) is string username) return username;
+            var nameProp = user.GetType().GetProperty("Name");
+            if (nameProp != null && nameProp.GetValue(user) is string name) return name;
+            return "Unknown";
+        }
+
+        private void SetUserOnQuery(InternalItemsQuery query, object user)
+        {
+            try
             {
-                _logger.LogWarning("Potential path traversal attempt or invalid character in Username: {Username}", user.Username);
+                // InternalItemsQuery has a User property of type Jellyfin.Data.Entities.User or similar
+                var userProp = typeof(InternalItemsQuery).GetProperty("User");
+                if (userProp != null && userProp.PropertyType.IsAssignableFrom(user.GetType()))
+                {
+                    userProp.SetValue(query, user);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not set User on InternalItemsQuery, watched items may be incomplete.");
+            }
+        }
+
+        private bool UserHasPrimaryImage(object userObj, string username)
+        {
+            if (string.IsNullOrEmpty(username)) return false;
+
+            // Security check: validate that Username contains no path traversal sequences
+            if (username.Contains('/') || username.Contains('\\') || username.Contains(".."))
+            {
+                _logger.LogWarning("Potential path traversal attempt or invalid character in Username: {Username}", username);
                 return false;
             }
 
             try
             {
-                // Try checking the filesystem for the profile image
                 if (!string.IsNullOrEmpty(_applicationPaths.ConfigurationDirectoryPath))
                 {
-                    var configUsersDir = Path.Combine(_applicationPaths.ConfigurationDirectoryPath, "users", user.Username);
+                    var configUsersDir = Path.Combine(_applicationPaths.ConfigurationDirectoryPath, "users", username);
                     if (Directory.Exists(configUsersDir))
                     {
                         var files = Directory.GetFiles(configUsersDir, "profile.*");
-                        if (files.Length > 0)
-                        {
-                            return true;
-                        }
+                        if (files.Length > 0) return true;
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error checking user profile image path on disk for user {Username}", user.Username);
+                _logger.LogWarning(ex, "Error checking user profile image path for user {Username}", username);
             }
 
             // Fallback reflection checks
             var hasProp = userObj.GetType().GetProperty("HasPrimaryImage");
-            if (hasProp != null)
-            {
-                return (bool)hasProp.GetValue(userObj)!;
-            }
+            if (hasProp != null && hasProp.GetValue(userObj) is bool hasPrimary) return hasPrimary;
 
             var pathProp = userObj.GetType().GetProperty("PrimaryImagePath");
-            if (pathProp != null)
-            {
-                return !string.IsNullOrEmpty((string?)pathProp.GetValue(userObj));
-            }
+            if (pathProp != null) return !string.IsNullOrEmpty(pathProp.GetValue(userObj) as string);
 
             var hasImageMethod = userObj.GetType().GetMethod("HasImage", new[] { typeof(MediaBrowser.Model.Entities.ImageType) });
             if (hasImageMethod != null)
-            {
-                return (bool)hasImageMethod.Invoke(userObj, new object[] { MediaBrowser.Model.Entities.ImageType.Primary })!;
-            }
+                return (bool)(hasImageMethod.Invoke(userObj, new object[] { MediaBrowser.Model.Entities.ImageType.Primary }) ?? false);
 
             return false;
         }
@@ -228,9 +254,7 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                     {
                         var isAdminProp = policy.GetType().GetProperty("IsAdministrator");
                         if (isAdminProp != null)
-                        {
-                            return (bool)isAdminProp.GetValue(policy)!;
-                        }
+                            return (bool)(isAdminProp.GetValue(policy) ?? false);
                     }
                 }
             }
