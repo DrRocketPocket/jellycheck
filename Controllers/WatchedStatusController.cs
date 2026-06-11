@@ -35,11 +35,29 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             _logger = logger;
         }
 
+        private object? GetCurrentUser()
+        {
+            var claimsUser = HttpContext.User;
+            if (claimsUser == null || claimsUser.Identity?.IsAuthenticated != true)
+            {
+                return null;
+            }
+
+            var userIdClaim = claimsUser.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                              ?? claimsUser.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return null;
+            }
+
+            return _userManager.GetUserById(userId);
+        }
+
         [HttpGet("watched")]
         public ActionResult<Dictionary<Guid, List<UserDto>>> GetWatchedItems()
         {
-            // Defense-in-depth: explicit check that user context is present and authenticated
-            if (!HttpContext.Items.TryGetValue("User", out var currentUser) || currentUser == null)
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
             {
                 return Unauthorized();
             }
@@ -118,16 +136,15 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
         [HttpGet("status")]
         public IActionResult GetStatus()
         {
-            if (HttpContext.Items.TryGetValue("User", out var userObj) && userObj != null)
-            {
-                if (!IsAdmin(userObj))
-                {
-                    return Forbid();
-                }
-            }
-            else
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
             {
                 return Unauthorized();
+            }
+
+            if (!IsAdmin(currentUser))
+            {
+                return Forbid();
             }
 
             return Ok(new
