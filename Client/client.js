@@ -201,11 +201,14 @@
         return url;
     }
 
-    function updateCard(card) {
-        const itemId = getItemId(card);
+    function updateCard(cardElement) {
+        const itemId = getItemId(cardElement);
         if (!itemId) {
             return;
         }
+
+        // Traverse up to find the actual card container wrapper
+        const card = cardElement.closest('.card') || cardElement.closest('.cardBox') || cardElement;
 
         const normalizedItemId = normalizeId(itemId);
         const users = watchedCache[normalizedItemId] || [];
