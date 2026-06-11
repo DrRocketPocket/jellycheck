@@ -23,59 +23,46 @@ jobs:
             9.0.x
 
       - name: Build Jellycheck 10.8 (net6.0)
-        run: |
-          dotnet publish jellycheck.csproj \
-            -c Release \
-            -o publish/10.8 \
-            --no-self-contained
+        run: dotnet publish jellycheck.csproj -c Release -o publish/10.8 --no-self-contained
 
       - name: Build Jellycheck 10.11 (net9.0)
-        run: |
-          dotnet publish jellycheck-10.11.csproj \
-            -c Release \
-            -o publish/10.11 \
-            --no-self-contained
+        run: dotnet publish jellycheck-10.11.csproj -c Release -o publish/10.11 --no-self-contained
 
       - name: Create Release Packages
         run: |
           mkdir -p release-assets
           cd publish/10.8 && zip -j ../../release-assets/Jellycheck-10.8.zip Jellycheck.dll && cd ../..
           cd publish/10.11 && zip -j ../../release-assets/Jellycheck-10.11.zip Jellycheck.dll && cd ../..
+          ls -la release-assets/
 
-      - name: Calculate Checksums and Update Manifest
-        shell: python3 {0}
+      - name: Update Manifest Checksums
         run: |
+          HASH_1011=$(md5sum release-assets/Jellycheck-10.11.zip | awk '{print $1}')
+          HASH_108=$(md5sum release-assets/Jellycheck-10.8.zip | awk '{print $1}')
+          echo "10.11 hash: $HASH_1011"
+          echo "10.8  hash: $HASH_108"
+
+          python3 - <<EOF
           import json
-          import hashlib
 
-          def get_md5(filename):
-              hash_md5 = hashlib.md5()
-              with open(filename, "rb") as f:
-                  for chunk in iter(lambda: f.read(4096), b""):
-                      hash_md5.update(chunk)
-              return hash_md5.hexdigest()
-
-          hash_10_11 = get_md5("release-assets/Jellycheck-10.11.zip")
-          hash_10_8  = get_md5("release-assets/Jellycheck-10.8.zip")
-
-          print(f"10.11 checksum: {hash_10_11}")
-          print(f"10.8  checksum: {hash_10_8}")
+          hash_10_11 = "$HASH_1011"
+          hash_10_8  = "$HASH_108"
 
           with open("manifest.json", "r") as f:
               manifest = json.load(f)
 
-          plugin = manifest[0]
-          for version_entry in plugin["versions"]:
+          for version_entry in manifest[0]["versions"]:
               abi = version_entry["targetAbi"]
               if abi.startswith("10.11") or abi.startswith("10.10") or abi.startswith("10.9"):
                   version_entry["checksum"] = hash_10_11
-              elif abi.startswith("10.8") or abi.startswith("10.7"):
+              else:
                   version_entry["checksum"] = hash_10_8
 
           with open("manifest.json", "w") as f:
               json.dump(manifest, f, indent=2)
 
           print("Manifest updated.")
+          EOF
 
       - name: Commit and Push Updated Manifest
         run: |
