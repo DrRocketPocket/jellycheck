@@ -170,6 +170,183 @@
             font-size: 0.95rem;
             line-height: 1.5;
         }
+
+        /* ── Auto-Delete Section ─────────────────────────────────────────── */
+        .jc-autodelete-card {
+            background: linear-gradient(135deg, rgba(255, 82, 82, 0.04) 0%, rgba(20, 20, 30, 0.6) 100%);
+            border: 1px solid rgba(255, 82, 82, 0.15);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        .jc-autodelete-card-title {
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .jc-autodelete-warning {
+            background: rgba(255, 167, 38, 0.1);
+            border: 1px solid rgba(255, 167, 38, 0.4);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #ffa726;
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        .jc-section-divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            margin: 24px 0;
+        }
+
+        .jc-section-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #6060a0;
+            margin-bottom: 16px;
+        }
+
+        .jc-field-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .jc-field-row:last-child { border-bottom: none; }
+
+        .jc-field-label {
+            flex: 1;
+        }
+
+        .jc-field-label strong {
+            display: block;
+            font-size: 0.95rem;
+            color: #e8e8f0;
+            margin-bottom: 2px;
+        }
+
+        .jc-field-label small {
+            font-size: 0.82rem;
+            color: #707080;
+            line-height: 1.4;
+        }
+
+        .jc-field-input {
+            flex-shrink: 0;
+            margin-left: 24px;
+        }
+
+        /* Toggle switch */
+        .jc-toggle {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .jc-toggle input { opacity: 0; width: 0; height: 0; }
+
+        .jc-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 26px;
+            transition: .3s;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .jc-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: #888;
+            border-radius: 50%;
+            transition: .3s;
+        }
+
+        .jc-toggle input:checked + .jc-toggle-slider {
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            border-color: rgba(0,242,254,0.4);
+        }
+
+        .jc-toggle input:checked + .jc-toggle-slider:before {
+            transform: translateX(22px);
+            background: #fff;
+        }
+
+        /* Number / text inputs */
+        .jc-number-input, .jc-text-input {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: #f0f0f0;
+            font-size: 0.95rem;
+            padding: 8px 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .jc-number-input { width: 72px; text-align: center; }
+        .jc-text-input   { width: 260px; }
+
+        .jc-number-input:focus, .jc-text-input:focus {
+            border-color: rgba(0,242,254,0.5);
+        }
+
+        .jc-save-row {
+            margin-top: 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .jc-save-btn {
+            background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%);
+            color: #0d0d13 !important;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .jc-save-btn:hover { box-shadow: 0 6px 20px rgba(0,242,254,0.45); transform: scale(1.02); }
+
+        .jc-save-status {
+            font-size: 0.9rem;
+            color: #00e676;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .jc-save-status.visible { opacity: 1; }
+
+        @media (max-width: 640px) {
+            .jc-text-input { width: 160px; }
+            .jc-field-row  { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .jc-field-input { margin-left: 0; }
+        }
     </style>
 
     <div class="jellycheck-container">
@@ -224,6 +401,203 @@
                 </ul>
             </div>
         </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- AUTO-DELETE SECTION                                                -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="jc-autodelete-card">
+            <h2 class="jc-autodelete-card-title">
+                <svg style="width:28px;height:28px;color:#ff5252" viewBox="0 0 24 24"><path fill="currentColor" d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"/></svg>
+                Auto-Delete Watched Media
+            </h2>
+            <p style="color:#a0a0b0;margin:4px 0 20px 0;font-size:0.95rem;">Automatically removes content from Sonarr/Radarr after everyone has watched it.</p>
+
+            <div class="jc-autodelete-warning">
+                ⚠️ <strong>Heads up:</strong> Deletions are permanent and remove files from disk. Items are never blacklisted — they can always be re-requested through Overseerr. Favourited items are never deleted.
+            </div>
+
+            <!-- TV Shows -->
+            <div class="jc-section-label">📺 TV Shows</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Enable Auto-Delete for Shows</strong>
+                    <small>Master toggle. When off, no shows are ever auto-deleted.</small>
+                </div>
+                <div class="jc-field-input">
+                    <label class="jc-toggle">
+                        <input type="checkbox" id="jc-EnableAutoDelete">
+                        <span class="jc-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Grace Period (days)</strong>
+                    <small>Days to wait after all users finish a show before deleting it. New episodes reset the clock automatically.</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="number" id="jc-DeleteDelayDays" class="jc-number-input" min="0" max="365" value="14">
+                </div>
+            </div>
+
+            <hr class="jc-section-divider">
+
+            <!-- Movies -->
+            <div class="jc-section-label">🎬 Movies</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Enable Auto-Delete for Movies</strong>
+                    <small>Separate toggle for movies. Uses its own grace period below.</small>
+                </div>
+                <div class="jc-field-input">
+                    <label class="jc-toggle">
+                        <input type="checkbox" id="jc-EnableMovieAutoDelete">
+                        <span class="jc-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Movie Grace Period (days)</strong>
+                    <small>Days to wait after all users watch a movie. Gives time for a potential rewatch.</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="number" id="jc-MovieDeleteDelayDays" class="jc-number-input" min="0" max="365" value="7">
+                </div>
+            </div>
+
+            <hr class="jc-section-divider">
+
+            <!-- Protection -->
+            <div class="jc-section-label">🛡️ Protection</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Skip if Favourited</strong>
+                    <small>Never delete a title if any user has marked it as a favourite.</small>
+                </div>
+                <div class="jc-field-input">
+                    <label class="jc-toggle">
+                        <input type="checkbox" id="jc-SkipIfFavorited" checked>
+                        <span class="jc-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="jc-section-divider">
+
+            <!-- Sonarr -->
+            <div class="jc-section-label">⬛ Sonarr</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Sonarr URL</strong>
+                    <small>e.g. http://localhost:8989 or http://sonarr:8989</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="text" id="jc-SonarrUrl" class="jc-text-input" placeholder="http://localhost:8989">
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Sonarr API Key</strong>
+                    <small>Found in Sonarr → Settings → General → Security</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="password" id="jc-SonarrApiKey" class="jc-text-input" placeholder="••••••••••••••••••••••••••••••••">
+                </div>
+            </div>
+
+            <hr class="jc-section-divider">
+
+            <!-- Radarr -->
+            <div class="jc-section-label">🟡 Radarr</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Radarr URL</strong>
+                    <small>e.g. http://localhost:7878 or http://radarr:7878</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="text" id="jc-RadarrUrl" class="jc-text-input" placeholder="http://localhost:7878">
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Radarr API Key</strong>
+                    <small>Found in Radarr → Settings → General → Security</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="password" id="jc-RadarrApiKey" class="jc-text-input" placeholder="••••••••••••••••••••••••••••••••">
+                </div>
+            </div>
+
+            <hr class="jc-section-divider">
+
+            <!-- Overseerr -->
+            <div class="jc-section-label">🔵 Overseerr / Jellyseerr</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Overseerr URL</strong>
+                    <small>e.g. http://localhost:5055 or http://overseerr:5055</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="text" id="jc-OverseerrUrl" class="jc-text-input" placeholder="http://localhost:5055">
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Overseerr API Key</strong>
+                    <small>Found in Overseerr → Settings → General</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="password" id="jc-OverseerrApiKey" class="jc-text-input" placeholder="••••••••••••••••••••••••••••••••">
+                </div>
+            </div>
+
+            <hr class="jc-section-divider">
+
+            <!-- Notifications -->
+            <div class="jc-section-label">🔔 Notifications</div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Notify Before Deletion</strong>
+                    <small>Log a prominent warning N days before a title gets deleted.</small>
+                </div>
+                <div class="jc-field-input">
+                    <label class="jc-toggle">
+                        <input type="checkbox" id="jc-NotifyUsersBeforeDeletion">
+                        <span class="jc-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Notify N Days Before</strong>
+                    <small>How many days before deletion to fire the notification.</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="number" id="jc-NotifyDaysBeforeDeletion" class="jc-number-input" min="1" max="30" value="3">
+                </div>
+            </div>
+
+            <!-- Save -->
+            <div class="jc-save-row">
+                <button id="jc-save-btn" class="jc-save-btn">💾 Save Settings</button>
+                <span id="jc-save-status" class="jc-save-status">✓ Settings saved!</span>
+            </div>
+        </div>
+        <!-- END AUTO-DELETE SECTION -->
     </div>
 
     <script type="text/javascript">
@@ -289,6 +663,109 @@
                 document.head.appendChild(script);
             }
 
+            // ── Auto-Delete Settings ────────────────────────────────────────
+
+            var PLUGIN_ID = 'f98bb1cb-a035-43fe-b892-db5e4d291fb4';
+
+            function getConfigUrl() {
+                if (window.ApiClient && typeof window.ApiClient.getUrl === 'function') {
+                    return window.ApiClient.getUrl('Plugins/' + PLUGIN_ID + '/Configuration');
+                }
+                var base = window.location.pathname.split('/web/')[0] || '';
+                return base + '/Plugins/' + PLUGIN_ID + '/Configuration';
+            }
+
+            function getAuthHeaders() {
+                var token = window.ApiClient && window.ApiClient.accessToken
+                    ? window.ApiClient.accessToken()
+                    : null;
+                return token ? { 'Authorization': 'MediaBrowser Token="' + token + '"' } : {};
+            }
+
+            function loadSettings() {
+                var url = getConfigUrl();
+                fetch(url, { headers: getAuthHeaders() })
+                    .then(function(r) { return r.json(); })
+                    .then(function(cfg) {
+                        setVal('jc-EnableAutoDelete',          cfg.EnableAutoDelete);
+                        setVal('jc-DeleteDelayDays',           cfg.DeleteDelayDays);
+                        setVal('jc-EnableMovieAutoDelete',     cfg.EnableMovieAutoDelete);
+                        setVal('jc-MovieDeleteDelayDays',      cfg.MovieDeleteDelayDays);
+                        setVal('jc-SkipIfFavorited',           cfg.SkipIfFavorited);
+                        setVal('jc-SonarrUrl',                 cfg.SonarrUrl);
+                        setVal('jc-SonarrApiKey',              cfg.SonarrApiKey);
+                        setVal('jc-RadarrUrl',                 cfg.RadarrUrl);
+                        setVal('jc-RadarrApiKey',              cfg.RadarrApiKey);
+                        setVal('jc-OverseerrUrl',              cfg.OverseerrUrl);
+                        setVal('jc-OverseerrApiKey',           cfg.OverseerrApiKey);
+                        setVal('jc-NotifyUsersBeforeDeletion', cfg.NotifyUsersBeforeDeletion);
+                        setVal('jc-NotifyDaysBeforeDeletion',  cfg.NotifyDaysBeforeDeletion);
+                    })
+                    .catch(function(err) {
+                        console.warn('[Jellycheck] Could not load plugin config:', err);
+                    });
+            }
+
+            function saveSettings() {
+                var cfg = {
+                    EnableAutoDelete:          getVal('jc-EnableAutoDelete'),
+                    DeleteDelayDays:           parseInt(getVal('jc-DeleteDelayDays'), 10) || 14,
+                    EnableMovieAutoDelete:     getVal('jc-EnableMovieAutoDelete'),
+                    MovieDeleteDelayDays:      parseInt(getVal('jc-MovieDeleteDelayDays'), 10) || 7,
+                    SkipIfFavorited:           getVal('jc-SkipIfFavorited'),
+                    SonarrUrl:                 getVal('jc-SonarrUrl'),
+                    SonarrApiKey:              getVal('jc-SonarrApiKey'),
+                    RadarrUrl:                 getVal('jc-RadarrUrl'),
+                    RadarrApiKey:              getVal('jc-RadarrApiKey'),
+                    OverseerrUrl:              getVal('jc-OverseerrUrl'),
+                    OverseerrApiKey:           getVal('jc-OverseerrApiKey'),
+                    NotifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
+                    NotifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3
+                };
+
+                var headers = Object.assign({ 'Content-Type': 'application/json' }, getAuthHeaders());
+
+                fetch(getConfigUrl(), {
+                    method:  'POST',
+                    headers: headers,
+                    body:    JSON.stringify(cfg)
+                })
+                .then(function(r) {
+                    if (r.ok) {
+                        var el = document.getElementById('jc-save-status');
+                        if (el) {
+                            el.classList.add('visible');
+                            setTimeout(function() { el.classList.remove('visible'); }, 3000);
+                        }
+                    } else {
+                        alert('Failed to save settings (HTTP ' + r.status + '). Check Jellyfin logs.');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[Jellycheck] Save failed:', err);
+                    alert('Failed to save settings. Check browser console for details.');
+                });
+            }
+
+            function setVal(id, value) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (el.type === 'checkbox') {
+                    el.checked = !!value;
+                } else {
+                    el.value = value != null ? value : '';
+                }
+            }
+
+            function getVal(id) {
+                var el = document.getElementById(id);
+                if (!el) return null;
+                if (el.type === 'checkbox') return el.checked;
+                return el.value;
+            }
+
+            // ── Init ────────────────────────────────────────────────────────
+
             function init() {
                 var page = document.querySelector('#JellycheckConfigPage');
                 if (!page) return;
@@ -300,6 +777,7 @@
                     } else {
                         injectScript();
                     }
+                    loadSettings();
                 });
 
                 document.getElementById('jellycheck-refresh-btn').addEventListener('click', function (e) {
@@ -311,8 +789,14 @@
                     }
                 });
 
+                document.getElementById('jc-save-btn').addEventListener('click', function (e) {
+                    e.preventDefault();
+                    saveSettings();
+                });
+
                 // Run immediately in case pageshow already fired
                 injectScript();
+                loadSettings();
             }
 
             // Wait for DOM readiness
