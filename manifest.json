@@ -12,7 +12,7 @@
         "changelog": "Add Auto-Delete Watched Media feature with Sonarr, Radarr, and Overseerr integration.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.12/Jellycheck-10.11.zip",
-        "checksum": "39153d39e4de06393172a4173dfeb441",
+        "checksum": "b3804a2977aa960c35a75635fc08f070",
         "timestamp": "2026-06-12 11:45:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Add Auto-Delete Watched Media feature with Sonarr, Radarr, and Overseerr integration.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.12/Jellycheck-10.11.zip",
-        "checksum": "39153d39e4de06393172a4173dfeb441",
+        "checksum": "b3804a2977aa960c35a75635fc08f070",
         "timestamp": "2026-06-12 11:45:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Add Auto-Delete Watched Media feature with Sonarr, Radarr, and Overseerr integration.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.12/Jellycheck-10.11.zip",
-        "checksum": "39153d39e4de06393172a4173dfeb441",
+        "checksum": "b3804a2977aa960c35a75635fc08f070",
         "timestamp": "2026-06-12 11:45:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Add Auto-Delete Watched Media feature with Sonarr, Radarr, and Overseerr integration.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.12/Jellycheck-10.8.zip",
-        "checksum": "df84d0bd0a464c6b52e09a5981a50e16",
+        "checksum": "b27a6d3ef27951e2354437067eb690ab",
         "timestamp": "2026-06-12 11:45:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Add Auto-Delete Watched Media feature with Sonarr, Radarr, and Overseerr integration.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.12/Jellycheck-10.8.zip",
-        "checksum": "df84d0bd0a464c6b52e09a5981a50e16",
+        "checksum": "b27a6d3ef27951e2354437067eb690ab",
         "timestamp": "2026-06-12 11:45:00"
       }
     ]
