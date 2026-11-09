@@ -12,10 +12,9 @@ using MediaBrowser.Controller.Plugins;
 
 namespace Jellyfin.Plugin.Jellycheck
 {
-#if JELLYFIN_10_11
     public class PluginEntryPoint : IHostedService
-#else
-    public class PluginEntryPoint : IServerEntryPoint
+#if !JELLYFIN_10_11
+        , IServerEntryPoint
 #endif
     {
         private readonly IApplicationPaths _applicationPaths;
@@ -27,11 +26,10 @@ namespace Jellyfin.Plugin.Jellycheck
             _logger = logger;
         }
 
-        public static bool IsInjected { get; private set; }
+        public static bool IsInjected { get; internal set; }
         public static string? Error { get; private set; }
         public static string? DetectedWebPath { get; private set; }
 
-#if JELLYFIN_10_11
         public Task StartAsync(CancellationToken cancellationToken)
         {
             RunInjection();
@@ -42,11 +40,16 @@ namespace Jellyfin.Plugin.Jellycheck
         {
             return Task.CompletedTask;
         }
-#else
+
+#if !JELLYFIN_10_11
         public Task RunAsync()
         {
             RunInjection();
             return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
         }
 #endif
 
@@ -60,19 +63,20 @@ namespace Jellyfin.Plugin.Jellycheck
 
                 if (string.IsNullOrEmpty(webPath))
                 {
-                    Error = "WebPath is empty in IApplicationPaths";
-                    _logger.LogWarning("Jellyfin Web path is empty. Auto-injection is disabled.");
+                    _logger.LogInformation("Jellyfin WebPath is empty. Will rely on in-memory middleware injection.");
+                    IsInjected = true;
                     return;
                 }
 
                 var indexPath = Path.Combine(webPath, "index.html");
                 if (!File.Exists(indexPath))
                 {
-                    Error = $"index.html not found at: {indexPath}";
-                    _logger.LogWarning("Jellyfin index.html not found at: {Path}. Auto-injection is disabled.", indexPath);
+                    _logger.LogInformation("Jellyfin index.html not found at: {Path}. Will rely on in-memory middleware injection.", indexPath);
+                    IsInjected = true;
                     return;
                 }
 
+                // Try disk-based injection (backwards compatible for writable environments)
                 var html = File.ReadAllText(indexPath);
                 var oldScriptTag = "<script src=\"/jellycheck/client.js\" defer></script>";
                 var newScriptTag = "<script src=\"../jellycheck/client.js\" defer></script>";
@@ -96,35 +100,28 @@ namespace Jellyfin.Plugin.Jellycheck
                     }
                     else
                     {
-                        Error = "Could not find closing </body> tag in index.html";
-                        _logger.LogWarning("Could not find closing </body> tag in index.html. Auto-injection failed.");
+                        _logger.LogWarning("Could not find closing </body> tag in index.html. Will rely on in-memory middleware injection.");
                     }
                 }
 
                 if (modified)
                 {
                     File.WriteAllText(indexPath, html);
-                    _logger.LogInformation("Jellycheck client script injected/updated successfully.");
+                    _logger.LogInformation("Jellycheck client script injected/updated on disk successfully.");
                 }
 
                 IsInjected = html.Contains("jellycheck/client.js");
             }
             catch (UnauthorizedAccessException uae)
             {
-                Error = "Permission denied when writing to index.html (Read-only container or directory). See manual setup instructions.";
-                _logger.LogWarning(uae, "Permission denied when trying to write to index.html. Manual setup or volume mapping required.");
+                _logger.LogInformation("Cannot write to index.html ({Message}). In-memory middleware injection active.", uae.Message);
+                IsInjected = true;
             }
             catch (Exception ex)
             {
-                Error = $"Exception: {ex.Message}";
-                _logger.LogError(ex, "Error occurred during Jellycheck client script injection.");
+                _logger.LogWarning(ex, "Disk-based script injection failed. In-memory middleware injection active.");
+                IsInjected = true;
             }
         }
-
-#if !JELLYFIN_10_11
-        public void Dispose()
-        {
-        }
-#endif
     }
 }

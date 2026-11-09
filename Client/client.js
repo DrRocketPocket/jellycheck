@@ -305,8 +305,8 @@
         const homeSections = getHomeSectionsContainer();
         const existing = document.getElementById('jellycheck-storage-wrapper');
 
-        // If not on home page, storage disabled, or no valid storage data (> 0), remove existing bar
-        if (!homeSections || (storageData && (storageData.enabled === false || !storageData.totalSpace || storageData.totalSpace <= 0))) {
+        // If not on home page or storage is explicitly disabled in settings, remove existing bar
+        if (!homeSections || (storageData && storageData.enabled === false)) {
             if (existing) existing.remove();
             return;
         }
@@ -326,7 +326,8 @@
             existing.remove();
         }
 
-        const pct = typeof storageData.percentUsed === 'number' ? storageData.percentUsed : 0;
+        const hasSpaceData = storageData.totalSpace && storageData.totalSpace > 0;
+        const pct = hasSpaceData && typeof storageData.percentUsed === 'number' ? storageData.percentUsed : 0;
         let barClass = '';
         if (pct >= 90) {
             barClass = 'critical';
@@ -334,10 +335,19 @@
             barClass = 'warning';
         }
 
-        let tooltipDetails = `${storageData.usedSpaceFormatted || ''} used of ${storageData.totalSpaceFormatted || ''} (${pct}% used)`;
+        let tooltipDetails = hasSpaceData
+            ? `${storageData.usedSpaceFormatted || ''} used of ${storageData.totalSpaceFormatted || ''} (${pct}% used)`
+            : (storageData.message || 'Storage details unavailable');
+
         if (storageData.disks && storageData.disks.length > 1) {
             tooltipDetails += '\n' + storageData.disks.map(d => `${d.path || d.label}: ${d.freeSpaceFormatted} free / ${d.totalSpaceFormatted}`).join('\n');
         }
+
+        const statsHtml = hasSpaceData
+            ? `<span><strong>${storageData.freeSpaceFormatted || '0 B'}</strong> free</span>
+               <span>of ${storageData.totalSpaceFormatted || '0 B'}</span>
+               <span class="jellycheck-storage-pct">(${pct}% used)</span>`
+            : `<span style="font-size:0.8rem;color:#94a3b8">${storageData.message || 'Storage details loading...'}</span>`;
 
         const wrapper = document.createElement('div');
         wrapper.id = 'jellycheck-storage-wrapper';
@@ -352,9 +362,7 @@
                         <span>Storage</span>
                     </div>
                     <div class="jellycheck-storage-stats">
-                        <span><strong>${storageData.freeSpaceFormatted || '0 B'}</strong> free</span>
-                        <span>of ${storageData.totalSpaceFormatted || '0 B'}</span>
-                        <span class="jellycheck-storage-pct">(${pct}% used)</span>
+                        ${statsHtml}
                     </div>
                 </div>
                 <div class="jellycheck-storage-track">

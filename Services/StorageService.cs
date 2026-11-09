@@ -462,24 +462,30 @@ namespace Jellyfin.Plugin.Jellycheck.Services
 
             var commandsToTry = new List<(string Cmd, string Args)>
             {
-                ("quota", "-s"),
-                ("/usr/bin/quota", "-s"),
-                ("/bin/quota", "-s")
+                ("sh", "-c \"quota -s 2>&1\""),
+                ("bash", "-c \"quota -s 2>&1\"")
             };
 
             if (!string.IsNullOrWhiteSpace(slotUser))
             {
-                commandsToTry.Insert(1, ("quota", $"-s -u {slotUser}"));
-                commandsToTry.Insert(3, ("/usr/bin/quota", $"-s -u {slotUser}"));
-                commandsToTry.Insert(5, ("/bin/quota", $"-s -u {slotUser}"));
+                commandsToTry.Add(("sh", $"-c \"quota -s -u {slotUser} 2>&1\""));
+                commandsToTry.Add(("bash", $"-c \"quota -s -u {slotUser} 2>&1\""));
+                commandsToTry.Add(("quota", $"-s -u {slotUser}"));
+                commandsToTry.Add(("/usr/bin/quota", $"-s -u {slotUser}"));
+                commandsToTry.Add(("/bin/quota", $"-s -u {slotUser}"));
             }
 
-            commandsToTry.Add(("quota", ""));
-            commandsToTry.Add(("/usr/bin/quota", ""));
-            commandsToTry.Add(("/bin/quota", ""));
+            commandsToTry.Add(("quota", "-s"));
+            commandsToTry.Add(("/usr/bin/quota", "-s"));
+            commandsToTry.Add(("/bin/quota", "-s"));
+            commandsToTry.Add(("/usr/local/bin/quota", "-s"));
+            commandsToTry.Add(("sh", "-c \"app-stats show 2>&1\""));
+            commandsToTry.Add(("bash", "-c \"app-stats show 2>&1\""));
             commandsToTry.Add(("app-stats", "show"));
             commandsToTry.Add(("/usr/local/bin/app-stats", "show"));
             commandsToTry.Add(("/usr/bin/app-stats", "show"));
+            commandsToTry.Add(("quota", ""));
+            commandsToTry.Add(("/usr/bin/quota", ""));
 
             foreach (var (cmd, args) in commandsToTry)
             {
@@ -494,6 +500,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                         UseShellExecute = false,
                         CreateNoWindow = true
                     };
+                    psi.EnvironmentVariables["LC_ALL"] = "C";
+                    psi.EnvironmentVariables["LANG"] = "C";
 
                     using var proc = new Process { StartInfo = psi };
                     if (!proc.Start()) continue;
@@ -501,7 +509,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     var outputTask = proc.StandardOutput.ReadToEndAsync();
                     var errorTask = proc.StandardError.ReadToEndAsync();
 
-                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(3));
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(4));
                     try
                     {
                         await proc.WaitForExitAsync(cts.Token).ConfigureAwait(false);
@@ -514,10 +522,13 @@ namespace Jellyfin.Plugin.Jellycheck.Services
 
                     var output = await outputTask.ConfigureAwait(false);
                     var error = await errorTask.ConfigureAwait(false);
+                    var combined = string.Join("\n", new[] { output, error }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim();
 
-                    if (proc.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
+                    // Linux 'quota' returns exit code 1 when user is near or over quota limit!
+                    // Therefore, we evaluate the text output regardless of non-zero exit code.
+                    if (!string.IsNullOrWhiteSpace(combined))
                     {
-                        var disk = ParseQuotaOutput(output) ?? ParseAppStatsOutput(output);
+                        var disk = ParseQuotaOutput(combined) ?? ParseAppStatsOutput(combined);
                         if (disk != null && disk.TotalSpace > 0)
                         {
                             return (disk, $"Ultra.cc system quota detected ({disk.Path}): {FormatBytes(disk.FreeSpace)} free of {FormatBytes(disk.TotalSpace)} ('{cmd} {args}').");
@@ -545,17 +556,21 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             int headerIdx = -1;
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].IndexOf("Filesystem", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (lines[i].IndexOf("Filesystem", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    lines[i].IndexOf("Dateisystem", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    lines[i].IndexOf("blocks", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    lines[i].IndexOf("space", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    lines[i].IndexOf("quota", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     headerIdx = i;
                     break;
                 }
             }
 
-            if (headerIdx == -1 || headerIdx >= lines.Count - 1) return null;
+            int startLine = (headerIdx >= 0 && headerIdx < lines.Count - 1) ? headerIdx + 1 : 0;
 
             var tokens = new List<string>();
-            for (int i = headerIdx + 1; i < lines.Count; i++)
+            for (int i = startLine; i < lines.Count; i++)
             {
                 var parts = lines[i].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
                 tokens.AddRange(parts);
