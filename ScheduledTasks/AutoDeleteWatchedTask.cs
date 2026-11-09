@@ -27,27 +27,31 @@ namespace Jellyfin.Plugin.Jellycheck.ScheduledTasks
         public string Description => "Deletes shows and movies that every user has watched, after a configurable grace period. Items with favourites are skipped. Nothing is blacklisted.";
         public string Category    => "Jellycheck";
 
-        private readonly WatchedAnalysisService _analysis;
-        private readonly WatchedStateStore       _stateStore;
-        private readonly SonarrService           _sonarr;
-        private readonly RadarrService           _radarr;
-        private readonly OverseerrService        _overseerr;
+        private readonly WatchedAnalysisService _analysis = null!;
+        private readonly WatchedStateStore       _stateStore = null!;
+        private readonly SonarrService           _sonarr = null!;
+        private readonly RadarrService           _radarr = null!;
+        private readonly OverseerrService        _overseerr = null!;
         private readonly ILogger<AutoDeleteWatchedTask> _logger;
 
+        // All plugin-owned services are optional: on Jellyfin versions without
+        // IPluginServiceRegistrator (e.g. 10.8) they cannot be resolved from DI.
+        // A hard constructor dependency makes ActivatorUtilities throw, which marks
+        // the whole plugin "Malfunctioned" (persisted in meta.json → plugin dead).
         public AutoDeleteWatchedTask(
-            WatchedAnalysisService analysis,
-            WatchedStateStore stateStore,
-            SonarrService sonarr,
-            RadarrService radarr,
-            OverseerrService overseerr,
-            ILogger<AutoDeleteWatchedTask> logger)
+            WatchedAnalysisService? analysis = null,
+            WatchedStateStore? stateStore = null,
+            SonarrService? sonarr = null,
+            RadarrService? radarr = null,
+            OverseerrService? overseerr = null,
+            ILogger<AutoDeleteWatchedTask>? logger = null)
         {
-            _analysis   = analysis;
-            _stateStore = stateStore;
-            _sonarr     = sonarr;
-            _radarr     = radarr;
-            _overseerr  = overseerr;
-            _logger     = logger;
+            _analysis   = analysis!;
+            _stateStore = stateStore!;
+            _sonarr     = sonarr!;
+            _radarr     = radarr!;
+            _overseerr  = overseerr!;
+            _logger     = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<AutoDeleteWatchedTask>.Instance;
         }
 
         // ── Triggers ─────────────────────────────────────────────────────────
@@ -70,6 +74,16 @@ namespace Jellyfin.Plugin.Jellycheck.ScheduledTasks
 
         public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
         {
+            // Guard for servers where plugin services could not be registered via DI
+            // (Jellyfin 10.8 and older). The task shell still shows up in the scheduler
+            // so the plugin keeps working; auto-delete simply requires a newer server.
+            if (_analysis == null || _stateStore == null)
+            {
+                _logger.LogWarning("[Jellycheck/AutoDelete] Plugin services unavailable (server without plugin DI support). Auto-delete requires Jellyfin 10.9+. Task skipped.");
+                progress.Report(100);
+                return;
+            }
+
             var config = Plugin.Instance?.Configuration;
             if (config == null)
             {

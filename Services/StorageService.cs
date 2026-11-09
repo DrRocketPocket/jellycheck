@@ -544,6 +544,17 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             return (null, "No active Linux user quota detected via 'quota -s' or 'app-stats'.");
         }
 
+        // Column names of 'quota' output — these must never be treated as filesystem candidates
+        private static readonly HashSet<string> QuotaHeaderWords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "filesystem", "dateisystem", "blocks", "space", "quota", "limit", "grace", "files", "user", "none"
+        };
+
+        private static bool IsFileSystemLikePath(string path)
+        {
+            return path.StartsWith("/", StringComparison.Ordinal) || path.Contains(":");
+        }
+
         private static DiskSpaceItem? ParseQuotaOutput(string output)
         {
             if (string.IsNullOrWhiteSpace(output)) return null;
@@ -553,17 +564,34 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                               .Where(l => l.Length > 0)
                               .ToList();
 
+            // Locate the real column header row ("Filesystem  space  quota  limit ...").
+            // NOTE: the preamble line ("Disk quotas for user x (uid N):") also contains the
+            // word "quota" and must NOT be treated as the header — otherwise the column-name
+            // row gets flattened into the data tokens and header words (e.g. "grace") are
+            // misparsed as filesystem entries with bogus numbers.
             int headerIdx = -1;
             for (int i = 0; i < lines.Count; i++)
             {
                 if (lines[i].IndexOf("Filesystem", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    lines[i].IndexOf("Dateisystem", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    lines[i].IndexOf("blocks", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    lines[i].IndexOf("space", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    lines[i].IndexOf("quota", StringComparison.OrdinalIgnoreCase) >= 0)
+                    lines[i].IndexOf("Dateisystem", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     headerIdx = i;
                     break;
+                }
+            }
+
+            // Fallback for localized headers without "Filesystem": a column row contains
+            // "blocks"/"space", while the preamble does not.
+            if (headerIdx == -1)
+            {
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    if (lines[i].IndexOf("blocks", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        lines[i].IndexOf("space", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        headerIdx = i;
+                        break;
+                    }
                 }
             }
 
@@ -589,6 +617,13 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     continue;
                 }
 
+                // Never treat quota column names as filesystems (guards against
+                // header rows leaking into the token stream)
+                if (QuotaHeaderWords.Contains(token))
+                {
+                    continue;
+                }
+
                 // If candidate is a filesystem name, the next 3 tokens are used, soft quota, hard limit
                 long used = ParseQuotaBytes(tokens[i + 1]);
                 long soft = ParseQuotaBytes(tokens[i + 2]);
@@ -606,7 +641,15 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                         FreeSpace = free
                     };
 
-                    if (bestDisk == null || item.TotalSpace > bestDisk.TotalSpace)
+                    bool isBetter =
+                        bestDisk == null ||
+                        item.TotalSpace > bestDisk.TotalSpace ||
+                        // On equal totals prefer a real filesystem path (e.g. "/dev/sda1")
+                        // over an arbitrary word that slipped through the filters
+                        (item.TotalSpace == bestDisk.TotalSpace &&
+                         !IsFileSystemLikePath(bestDisk.Path) && IsFileSystemLikePath(item.Path));
+
+                    if (isBetter)
                     {
                         bestDisk = item;
                     }
