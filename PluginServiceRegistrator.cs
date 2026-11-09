@@ -21,6 +21,7 @@ namespace Jellyfin.Plugin.Jellycheck
             serviceCollection.AddSingleton<SonarrService>();
             serviceCollection.AddSingleton<RadarrService>();
             serviceCollection.AddSingleton<OverseerrService>();
+            serviceCollection.AddSingleton<StorageService>();
 
             // Scheduled task — Jellyfin discovers IScheduledTask via DI
             serviceCollection.AddSingleton<IScheduledTask, AutoDeleteWatchedTask>();

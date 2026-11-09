@@ -4,6 +4,8 @@
 *.msi
 *.csproj.user
 *.zip
+.packages/
+packages/
 
 # Local development test container
 docker-test/

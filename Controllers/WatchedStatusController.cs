@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MediaBrowser.Controller.Library;
@@ -10,6 +11,7 @@ using MediaBrowser.Model.Entities;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Common.Configuration;
 using Microsoft.AspNetCore.Authorization;
+using Jellyfin.Plugin.Jellycheck.Services;
 
 namespace Jellyfin.Plugin.Jellycheck.Controllers
 {
@@ -22,17 +24,23 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
         private readonly ILibraryManager _libraryManager;
         private readonly IApplicationPaths _applicationPaths;
         private readonly ILogger<WatchedStatusController> _logger;
+        private readonly StorageService _storageService;
 
         public WatchedStatusController(
             IUserManager userManager,
             ILibraryManager libraryManager,
             IApplicationPaths applicationPaths,
-            ILogger<WatchedStatusController> logger)
+            ILogger<WatchedStatusController> logger,
+            StorageService? storageService = null)
         {
             _userManager = userManager;
             _libraryManager = libraryManager;
             _applicationPaths = applicationPaths;
             _logger = logger;
+            _storageService = storageService ?? new StorageService(
+                logger: null,
+                applicationPaths: applicationPaths,
+                libraryManager: libraryManager);
         }
 
         private object? GetCurrentUser()
@@ -204,6 +212,27 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
             return Ok(watchedMap);
         }
 
+        [HttpGet("storage")]
+        public async Task<ActionResult<StorageInfoDto>> GetStorage([FromQuery] bool refresh = false)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var storageInfo = await _storageService.GetStorageAsync(refresh).ConfigureAwait(false);
+                return Ok(storageInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving storage status in Jellycheck.");
+                return StatusCode(500, "Internal server error occurred while retrieving storage details.");
+            }
+        }
+
         [HttpGet("client.js")]
         [AllowAnonymous]
         public IActionResult GetClientScript()
@@ -227,6 +256,7 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
                 return StatusCode(500, "Internal server error occurred while retrieving the client script.");
             }
         }
+
         [HttpGet("status")]
         public IActionResult GetStatus()
         {

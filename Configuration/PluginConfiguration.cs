@@ -43,6 +43,10 @@ namespace Jellyfin.Plugin.Jellycheck.Configuration
         /// <summary>Overseerr API key.</summary>
         public string OverseerrApiKey { get; set; } = string.Empty;
 
+        // ── Storage Bar ───────────────────────────────────────────────────────
+        /// <summary>Display a storage progress bar on the Jellyfin home page for all users.</summary>
+        public bool ShowStorageOnHomePage { get; set; } = true;
+
         // ── Notifications ────────────────────────────────────────────────────
         /// <summary>Send a Jellyfin server notification before content is auto-deleted.</summary>
         public bool NotifyUsersBeforeDeletion { get; set; } = false;
