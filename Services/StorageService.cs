@@ -40,6 +40,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         public string FreeSpaceFormatted { get; set; } = string.Empty;
         public string UsedSpaceFormatted { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
+        public string? Message { get; set; }
         public List<DiskInfoDto> Disks { get; set; } = new();
     }
 
@@ -85,9 +86,11 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
             var allDisks = new List<DiskSpaceItem>();
             string primarySource = "None";
+            string statusMessage = string.Empty;
 
             // 1. Try Sonarr
-            if (!string.IsNullOrWhiteSpace(config.SonarrUrl) && !string.IsNullOrWhiteSpace(config.SonarrApiKey))
+            bool sonarrConfigured = !string.IsNullOrWhiteSpace(config.SonarrUrl) && !string.IsNullOrWhiteSpace(config.SonarrApiKey);
+            if (sonarrConfigured)
             {
                 var sonarrDisks = await _sonarr.GetDiskSpaceAsync(config.SonarrUrl, config.SonarrApiKey).ConfigureAwait(false);
                 if (sonarrDisks != null && sonarrDisks.Count > 0)
@@ -101,7 +104,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
 
             // 2. Try Radarr
-            if (!string.IsNullOrWhiteSpace(config.RadarrUrl) && !string.IsNullOrWhiteSpace(config.RadarrApiKey))
+            bool radarrConfigured = !string.IsNullOrWhiteSpace(config.RadarrUrl) && !string.IsNullOrWhiteSpace(config.RadarrApiKey);
+            if (radarrConfigured)
             {
                 var radarrDisks = await _radarr.GetDiskSpaceAsync(config.RadarrUrl, config.RadarrApiKey).ConfigureAwait(false);
                 if (radarrDisks != null && radarrDisks.Count > 0)
@@ -116,35 +120,106 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 }
             }
 
-            // 3. Fallback: Host DriveInfo
+            // 3. Fallback: Host and Library DriveInfo
             if (allDisks.Count == 0)
             {
                 try
                 {
-                    var hostDrives = DriveInfo.GetDrives()
-                        .Where(d => d.IsReady && (d.DriveType == DriveType.Fixed || d.DriveType == DriveType.Network))
-                        .ToList();
-
-                    // Prioritize drive containing Jellyfin data
-                    var dataPath = _applicationPaths.DataPath;
-                    var candidate = hostDrives.FirstOrDefault(d => !string.IsNullOrEmpty(d.Name) && dataPath.StartsWith(d.Name, StringComparison.OrdinalIgnoreCase))
-                        ?? hostDrives.FirstOrDefault();
-
-                    if (candidate != null)
+                    // Inspect Jellyfin's configured media library directories
+                    if (_libraryManager != null)
                     {
-                        primarySource = "Host Drive";
-                        allDisks.Add(new DiskSpaceItem
+                        var virtualFolders = _libraryManager.GetVirtualFolders();
+                        foreach (var vf in virtualFolders)
                         {
-                            Path = candidate.Name,
-                            Label = string.IsNullOrWhiteSpace(candidate.VolumeLabel) ? candidate.Name : candidate.VolumeLabel,
-                            FreeSpace = candidate.AvailableFreeSpace,
-                            TotalSpace = candidate.TotalSize
-                        });
+                            foreach (var loc in vf.Locations)
+                            {
+                                if (!string.IsNullOrEmpty(loc) && Directory.Exists(loc))
+                                {
+                                    try
+                                    {
+                                        var dInfo = new DriveInfo(loc);
+                                        if (dInfo.TotalSize > 0)
+                                        {
+                                            primarySource = "Jellyfin Media Drive";
+                                            AddIfDistinct(allDisks, new DiskSpaceItem
+                                            {
+                                                Path = loc,
+                                                Label = vf.Name ?? dInfo.Name,
+                                                FreeSpace = dInfo.AvailableFreeSpace,
+                                                TotalSpace = dInfo.TotalSize
+                                            });
+                                        }
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
+                    }
+
+                    // Fallback to data path / root drive
+                    if (allDisks.Count == 0)
+                    {
+                        var dataPath = _applicationPaths?.DataPath;
+                        if (!string.IsNullOrEmpty(dataPath) && Directory.Exists(dataPath))
+                        {
+                            try
+                            {
+                                var dInfo = new DriveInfo(dataPath);
+                                if (dInfo.TotalSize > 0)
+                                {
+                                    primarySource = "Server Storage";
+                                    allDisks.Add(new DiskSpaceItem
+                                    {
+                                        Path = dInfo.Name,
+                                        Label = string.IsNullOrWhiteSpace(dInfo.VolumeLabel) ? dInfo.Name : dInfo.VolumeLabel,
+                                        FreeSpace = dInfo.AvailableFreeSpace,
+                                        TotalSpace = dInfo.TotalSize
+                                    });
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+
+                    // Fallback to DriveInfo.GetDrives()
+                    if (allDisks.Count == 0)
+                    {
+                        var hostDrives = DriveInfo.GetDrives()
+                            .Where(d => {
+                                try { return d.IsReady && d.TotalSize > 0; }
+                                catch { return false; }
+                            })
+                            .ToList();
+
+                        if (hostDrives.Count > 0)
+                        {
+                            var bestDrive = hostDrives.OrderByDescending(d => d.TotalSize).First();
+                            primarySource = "Host Storage";
+                            allDisks.Add(new DiskSpaceItem
+                            {
+                                Path = bestDrive.Name,
+                                Label = string.IsNullOrWhiteSpace(bestDrive.VolumeLabel) ? bestDrive.Name : bestDrive.VolumeLabel,
+                                FreeSpace = bestDrive.AvailableFreeSpace,
+                                TotalSpace = bestDrive.TotalSize
+                            });
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger?.LogWarning(ex, "[Jellycheck/Storage] Failed to read local drive information.");
+                }
+            }
+
+            if (allDisks.Count == 0)
+            {
+                if (sonarrConfigured || radarrConfigured)
+                {
+                    statusMessage = "Could not reach Sonarr/Radarr. Check URL (include https://) and API key.";
+                }
+                else
+                {
+                    statusMessage = "Sonarr/Radarr not configured in Jellycheck settings.";
                 }
             }
 
@@ -164,6 +239,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 FreeSpaceFormatted = FormatBytes(freeSpace),
                 UsedSpaceFormatted = FormatBytes(usedSpace),
                 Source = primarySource,
+                Message = statusMessage,
                 Disks = allDisks.Select(d =>
                 {
                     long diskUsed = Math.Max(0, d.TotalSpace - d.FreeSpace);
@@ -194,7 +270,6 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         {
             if (item.TotalSpace <= 0) return;
 
-            // Check if already present by exact path
             if (list.Any(d => string.Equals(d.Path, item.Path, StringComparison.OrdinalIgnoreCase)))
             {
                 return;

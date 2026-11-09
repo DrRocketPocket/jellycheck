@@ -353,7 +353,7 @@
                 <h1 class="jellycheck-title">Jellycheck</h1>
                 <div class="jellycheck-subtitle">Watched status avatars & storage monitor plugin</div>
             </div>
-            <span class="jellycheck-badge">v1.0.0.13</span>
+            <span class="jellycheck-badge">v1.0.0.14</span>
         </div>
 
         <!-- Active notice -->
@@ -745,8 +745,9 @@
                             }
                         } else {
                             if (freeEl) freeEl.innerText = 'Unavailable';
-                            if (totalEl) totalEl.innerText = 'Configure Sonarr/Radarr';
-                            if (sourceEl) sourceEl.innerText = 'None';
+                            if (totalEl) totalEl.innerText = (data && data.message) ? data.message : 'Configure Sonarr/Radarr';
+                            if (sourceEl) sourceEl.innerText = (data && data.source) ? data.source : 'None';
+                            if (barEl) barEl.style.width = '0%';
                         }
                     })
                     .catch(function(err) {

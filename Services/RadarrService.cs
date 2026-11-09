@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Jellycheck.Services
@@ -19,63 +20,164 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         public RadarrService(ILogger<RadarrService>? logger = null)
         {
             _logger = logger;
-            _http   = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            _http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+        }
+
+        private static string NormalizeBaseUrl(string baseUrl)
+        {
+            var clean = (baseUrl ?? string.Empty).Trim().TrimEnd('/');
+            if (string.IsNullOrEmpty(clean)) return string.Empty;
+            if (!clean.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !clean.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                clean = "https://" + clean;
+            }
+            return clean;
         }
 
         // ── Disk space ────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Retrieves the disk space list from Radarr /api/v3/diskspace.
+        /// Retrieves the disk space list from Radarr /api/v3/diskspace or /api/v3/rootfolder.
         /// Returns null if Radarr is unreachable.
         /// </summary>
         public async Task<List<DiskSpaceItem>?> GetDiskSpaceAsync(string baseUrl, string apiKey)
         {
+            if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
+                return null;
+
+            // 1. Try /api/v3/diskspace
+            var disks = await FetchDisksFromEndpointAsync(baseUrl, apiKey, "api/v3/diskspace").ConfigureAwait(false);
+            if (disks != null && disks.Count > 0)
+            {
+                return disks;
+            }
+
+            // 2. Fallback to /api/v3/rootfolder (reliable on seedboxes like Ultra.cc where media roots have quotas)
+            var rootFolders = await FetchDisksFromEndpointAsync(baseUrl, apiKey, "api/v3/rootfolder").ConfigureAwait(false);
+            if (rootFolders != null && rootFolders.Count > 0)
+            {
+                return rootFolders;
+            }
+
+            return null;
+        }
+
+        private async Task<List<DiskSpaceItem>?> FetchDisksFromEndpointAsync(string baseUrl, string apiKey, string endpoint)
+        {
             try
             {
-                var url = $"{baseUrl.TrimEnd('/')}/api/v3/diskspace";
+                var cleanBase = NormalizeBaseUrl(baseUrl);
+                if (string.IsNullOrEmpty(cleanBase)) return null;
+
+                var cleanKey = apiKey.Trim();
+                var sep = endpoint.Contains('?') ? '&' : '?';
+                var url = $"{cleanBase}/{endpoint}{sep}apikey={Uri.EscapeDataString(cleanKey)}";
+
                 using var req = new HttpRequestMessage(HttpMethod.Get, url);
-                req.Headers.Add("X-Api-Key", apiKey);
+                req.Headers.TryAddWithoutValidation("X-Api-Key", cleanKey);
+                req.Headers.TryAddWithoutValidation("Accept", "application/json");
 
                 using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    _logger?.LogWarning("[Jellycheck/Radarr] GET /api/v3/diskspace returned {Status}", resp.StatusCode);
+                    _logger?.LogWarning("[Jellycheck/Radarr] GET {Endpoint} returned {Status}", endpoint, resp.StatusCode);
                     return null;
                 }
 
                 var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
                 using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.ValueKind != JsonValueKind.Array)
-                {
-                    return null;
-                }
 
                 var list = new List<DiskSpaceItem>();
-                foreach (var el in doc.RootElement.EnumerateArray())
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
                 {
-                    var path = el.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
-                    var label = el.TryGetProperty("label", out var l) ? l.GetString() ?? "" : "";
-                    long free = el.TryGetProperty("freeSpace", out var f) ? f.GetInt64() : 0;
-                    long total = el.TryGetProperty("totalSpace", out var t) ? t.GetInt64() : 0;
-
-                    if (total > 0)
+                    foreach (var el in doc.RootElement.EnumerateArray())
                     {
-                        list.Add(new DiskSpaceItem
-                        {
-                            Path = path,
-                            Label = label,
-                            FreeSpace = free,
-                            TotalSpace = total
-                        });
+                        ParseDiskItem(el, list);
                     }
                 }
-                return list;
+                else if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                {
+                    if (doc.RootElement.TryGetProperty("records", out var records) && records.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in records.EnumerateArray())
+                        {
+                            ParseDiskItem(el, list);
+                        }
+                    }
+                    else
+                    {
+                        ParseDiskItem(doc.RootElement, list);
+                    }
+                }
+
+                return list.Count > 0 ? list : null;
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "[Jellycheck/Radarr] Error querying disk space from Radarr");
+                _logger?.LogWarning(ex, "[Jellycheck/Radarr] Error querying {Endpoint} from Radarr", endpoint);
                 return null;
             }
+        }
+
+        private static void ParseDiskItem(JsonElement el, List<DiskSpaceItem> list)
+        {
+            string path = GetStringProp(el, "path") ?? "";
+            string label = GetStringProp(el, "label") ?? "";
+            long free = GetInt64Prop(el, "freeSpace", "freespace", "free_space");
+            long total = GetInt64Prop(el, "totalSpace", "totalspace", "total_space");
+
+            if (total > 0)
+            {
+                list.Add(new DiskSpaceItem
+                {
+                    Path = path,
+                    Label = label,
+                    FreeSpace = free,
+                    TotalSpace = total
+                });
+            }
+        }
+
+        private static string? GetStringProp(JsonElement el, string name)
+        {
+            if (el.TryGetProperty(name, out var p))
+                return p.GetString();
+            foreach (var prop in el.EnumerateObject())
+            {
+                if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase))
+                    return prop.Value.GetString();
+            }
+            return null;
+        }
+
+        private static long GetInt64Prop(JsonElement el, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (el.TryGetProperty(name, out var p))
+                {
+                    if (p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var v)) return v;
+                    if (p.ValueKind == JsonValueKind.Number && p.TryGetDouble(out var d)) return (long)d;
+                    if (p.ValueKind == JsonValueKind.String && long.TryParse(p.GetString(), out var s)) return s;
+                }
+            }
+            foreach (var prop in el.EnumerateObject())
+            {
+                if (names.Any(n => string.Equals(prop.Name, n, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var p = prop.Value;
+                    if (p.ValueKind == JsonValueKind.Number && p.TryGetInt64(out var v)) return v;
+                    if (p.ValueKind == JsonValueKind.Number && p.TryGetDouble(out var d)) return (long)d;
+                    if (p.ValueKind == JsonValueKind.String && long.TryParse(p.GetString(), out var s)) return s;
+                }
+            }
+            return 0;
         }
 
         // ── Movie lookup ─────────────────────────────────────────────────────
@@ -88,9 +190,15 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         {
             try
             {
-                var url = $"{baseUrl.TrimEnd('/')}/api/v3/movie?tmdbId={tmdbId}";
+                var cleanBase = NormalizeBaseUrl(baseUrl);
+                if (string.IsNullOrEmpty(cleanBase)) return null;
+
+                var cleanKey = apiKey.Trim();
+                var url = $"{cleanBase}/api/v3/movie?tmdbId={tmdbId}&apikey={Uri.EscapeDataString(cleanKey)}";
+
                 using var req = new HttpRequestMessage(HttpMethod.Get, url);
-                req.Headers.Add("X-Api-Key", apiKey);
+                req.Headers.TryAddWithoutValidation("X-Api-Key", cleanKey);
+                req.Headers.TryAddWithoutValidation("Accept", "application/json");
 
                 using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
@@ -103,7 +211,6 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                // Radarr returns an array when filtering by tmdbId
                 if (root.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var el in root.EnumerateArray())
@@ -138,9 +245,14 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         {
             try
             {
-                var url = $"{baseUrl.TrimEnd('/')}/api/v3/movie/{radarrId}?deleteFiles=true&addImportExclusion=false";
+                var cleanBase = NormalizeBaseUrl(baseUrl);
+                if (string.IsNullOrEmpty(cleanBase)) return false;
+
+                var cleanKey = apiKey.Trim();
+                var url = $"{cleanBase}/api/v3/movie/{radarrId}?deleteFiles=true&addImportExclusion=false&apikey={Uri.EscapeDataString(cleanKey)}";
+
                 using var req = new HttpRequestMessage(HttpMethod.Delete, url);
-                req.Headers.Add("X-Api-Key", apiKey);
+                req.Headers.TryAddWithoutValidation("X-Api-Key", cleanKey);
 
                 using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 if (resp.IsSuccessStatusCode)
