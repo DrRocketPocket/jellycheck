@@ -53,7 +53,9 @@ jobs:
 
           for version_entry in manifest[0]["versions"]:
               abi = version_entry["targetAbi"]
-              if abi.startswith("10.11") or abi.startswith("10.10") or abi.startswith("10.9"):
+              # Checksum must match the zip each targetAbi's sourceUrl points at.
+              # Only 10.11 gets the net9.0 build; 10.9/10.10/10.8/10.7 use the net6.0 zip.
+              if abi.startswith("10.11"):
                   version_entry["checksum"] = hash_10_11
               else:
                   version_entry["checksum"] = hash_10_8
