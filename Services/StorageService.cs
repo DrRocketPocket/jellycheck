@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller.Library;
@@ -90,7 +94,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             string primarySource = "None";
             string statusMessage = string.Empty;
 
-            // 1. Try Sonarr
+            // 1. Try Configured Sonarr
             bool sonarrConfigured = !string.IsNullOrWhiteSpace(config.SonarrUrl);
             if (sonarrConfigured)
             {
@@ -114,10 +118,30 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
             else
             {
-                diag.Add("Sonarr is not configured.");
+                diag.Add("Sonarr is not configured in settings.");
             }
 
-            // 2. Try Radarr
+            // 1b. If Sonarr not configured or failed, try local Sonarr auto-discovery (e.g. Ultra.cc ~/.apps/sonarr)
+            if (allDisks.Count == 0)
+            {
+                var discovered = TryAutoDiscoverApp("Sonarr");
+                if (discovered != null)
+                {
+                    diag.Add($"Auto-discovered local Sonarr at {discovered.Value.Url}. Testing...");
+                    var (localDisks, localLog) = await _sonarr.GetDiskSpaceWithLogAsync(discovered.Value.Url, discovered.Value.ApiKey).ConfigureAwait(false);
+                    diag.Add("Local slot " + localLog);
+                    if (localDisks != null && localDisks.Count > 0)
+                    {
+                        primarySource = "Sonarr (Local slot)";
+                        foreach (var disk in localDisks)
+                        {
+                            AddIfDistinct(allDisks, disk);
+                        }
+                    }
+                }
+            }
+
+            // 2. Try Configured Radarr
             bool radarrConfigured = !string.IsNullOrWhiteSpace(config.RadarrUrl);
             if (radarrConfigured)
             {
@@ -143,15 +167,48 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
             else
             {
-                diag.Add("Radarr is not configured.");
+                diag.Add("Radarr is not configured in settings.");
             }
 
-            // 3. Fallback: Host and Library DriveInfo
+            // 2b. If Radarr not configured or failed, try local Radarr auto-discovery (e.g. Ultra.cc ~/.apps/radarr)
+            if (allDisks.Count == 0)
+            {
+                var discovered = TryAutoDiscoverApp("Radarr");
+                if (discovered != null)
+                {
+                    diag.Add($"Auto-discovered local Radarr at {discovered.Value.Url}. Testing...");
+                    var (localDisks, localLog) = await _radarr.GetDiskSpaceWithLogAsync(discovered.Value.Url, discovered.Value.ApiKey).ConfigureAwait(false);
+                    diag.Add("Local slot " + localLog);
+                    if (localDisks != null && localDisks.Count > 0)
+                    {
+                        if (primarySource == "None") primarySource = "Radarr (Local slot)";
+                        else primarySource = "Sonarr / Radarr";
+
+                        foreach (var disk in localDisks)
+                        {
+                            AddIfDistinct(allDisks, disk);
+                        }
+                    }
+                }
+            }
+
+            // 3. Try Ultra.cc / Linux System Quota (quota -s -w)
+            if (allDisks.Count == 0)
+            {
+                var (quotaDisk, quotaLog) = await TryGetSystemQuotaAsync().ConfigureAwait(false);
+                diag.Add(quotaLog);
+                if (quotaDisk != null && quotaDisk.TotalSpace > 0)
+                {
+                    primarySource = "Ultra.cc System Quota";
+                    AddIfDistinct(allDisks, quotaDisk);
+                }
+            }
+
+            // 4. Try Jellyfin configured media library directories
             if (allDisks.Count == 0)
             {
                 try
                 {
-                    // Inspect Jellyfin's configured media library directories
                     if (_libraryManager != null)
                     {
                         var virtualFolders = _libraryManager.GetVirtualFolders();
@@ -251,11 +308,11 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             {
                 if (sonarrConfigured || radarrConfigured)
                 {
-                    statusMessage = "Unable to connect to Sonarr/Radarr. Check URL and API key.";
+                    statusMessage = "Unable to connect to configured Sonarr/Radarr. Check diagnostics.";
                 }
                 else
                 {
-                    statusMessage = "Sonarr/Radarr not configured in Jellycheck settings.";
+                    statusMessage = "No disks or quota found. Configure Sonarr/Radarr in settings.";
                 }
             }
 
@@ -304,6 +361,202 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Auto-discovers local Sonarr or Radarr installation configuration on seedboxes (e.g. Ultra.cc ~/.apps/{app}/config.xml).
+        /// </summary>
+        private static (string Url, string ApiKey)? TryAutoDiscoverApp(string appName)
+        {
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (string.IsNullOrEmpty(home))
+            {
+                home = Environment.GetEnvironmentVariable("HOME") ?? "/home";
+            }
+
+            var candidatePaths = new[]
+            {
+                Path.Combine(home, ".apps", appName.ToLowerInvariant(), "config.xml"),
+                Path.Combine(home, ".config", appName, "config.xml"),
+                Path.Combine(home, ".config", appName.ToLowerInvariant(), "config.xml"),
+                Path.Combine("/config", "config.xml"),
+                Path.Combine("/var/lib", appName.ToLowerInvariant(), "config.xml")
+            };
+
+            foreach (var path in candidatePaths)
+            {
+                try
+                {
+                    if (!File.Exists(path)) continue;
+                    var doc = XDocument.Load(path);
+                    var root = doc.Root;
+                    if (root == null) continue;
+
+                    var portStr = root.Element("Port")?.Value;
+                    var urlBase = root.Element("UrlBase")?.Value ?? string.Empty;
+                    var apiKey = root.Element("ApiKey")?.Value;
+
+                    if (int.TryParse(portStr, out int port) && !string.IsNullOrWhiteSpace(apiKey))
+                    {
+                        var cleanUrlBase = urlBase.Trim().TrimEnd('/');
+                        if (!string.IsNullOrEmpty(cleanUrlBase) && !cleanUrlBase.StartsWith("/"))
+                        {
+                            cleanUrlBase = "/" + cleanUrlBase;
+                        }
+                        var localUrl = $"http://127.0.0.1:{port}{cleanUrlBase}";
+                        return (localUrl, apiKey.Trim());
+                    }
+                }
+                catch { }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Reads Linux user quota directly via 'quota -s -w' (native to seedboxes like Ultra.cc).
+        /// </summary>
+        private static async Task<(DiskSpaceItem? Disk, string Log)> TryGetSystemQuotaAsync()
+        {
+            if (Environment.OSVersion.Platform != PlatformID.Unix && 
+                Environment.OSVersion.Platform != PlatformID.MacOSX)
+            {
+                return (null, "System quota check skipped: not running on Linux/Unix.");
+            }
+
+            try
+            {
+                var candidateCommands = new[]
+                {
+                    ("quota", "-s -w"),
+                    ("quota", "-s"),
+                    ("quota", "-w"),
+                    ("/usr/bin/quota", "-s -w"),
+                    ("/usr/bin/quota", "-s")
+                };
+
+                foreach (var (cmd, args) in candidateCommands)
+                {
+                    try
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = cmd,
+                            Arguments = args,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+
+                        using var proc = Process.Start(psi);
+                        if (proc == null) continue;
+
+                        var outputTask = proc.StandardOutput.ReadToEndAsync();
+                        var errTask = proc.StandardError.ReadToEndAsync();
+
+                        var finished = await Task.WhenAny(
+                            Task.Run(() => proc.WaitForExit(3000)), 
+                            Task.Delay(3000)
+                        ).ConfigureAwait(false);
+
+                        if (finished != Task.Delay(3000))
+                        {
+                            var output = await outputTask.ConfigureAwait(false);
+                            if (proc.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
+                            {
+                                var parsed = ParseQuotaOutput(output);
+                                if (parsed != null && parsed.TotalSpace > 0)
+                                {
+                                    return (parsed, $"Ultra.cc system quota detected ({parsed.Path}): {FormatBytes(parsed.FreeSpace)} free of {FormatBytes(parsed.TotalSpace)}.");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            try { proc.Kill(); } catch { }
+                        }
+                    }
+                    catch { }
+                }
+
+                return (null, "System quota command (quota -s) executed but found no active user quota.");
+            }
+            catch (Exception ex)
+            {
+                return (null, $"System quota check error: {ex.Message}");
+            }
+        }
+
+        private static DiskSpaceItem? ParseQuotaOutput(string output)
+        {
+            if (string.IsNullOrWhiteSpace(output)) return null;
+
+            var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                              .Select(l => l.Trim())
+                              .Where(l => l.Length > 0)
+                              .ToList();
+
+            int headerIdx = -1;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (lines[i].IndexOf("Filesystem", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    headerIdx = i;
+                    break;
+                }
+            }
+
+            if (headerIdx == -1 || headerIdx >= lines.Count - 1) return null;
+
+            var tokens = new List<string>();
+            for (int i = headerIdx + 1; i < lines.Count; i++)
+            {
+                var parts = lines[i].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+                tokens.AddRange(parts);
+            }
+
+            if (tokens.Count < 4) return null;
+
+            string fs = tokens[0];
+            long used = ParseQuotaBytes(tokens[1]);
+            long soft = ParseQuotaBytes(tokens[2]);
+            long hard = ParseQuotaBytes(tokens[3]);
+            long total = Math.Max(hard, soft);
+
+            if (total <= 0) return null;
+            long free = Math.Max(0, total - used);
+
+            return new DiskSpaceItem
+            {
+                Path = fs,
+                Label = "User Quota (" + fs + ")",
+                TotalSpace = total,
+                FreeSpace = free
+            };
+        }
+
+        private static long ParseQuotaBytes(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return 0;
+            str = str.Replace("*", "").Trim();
+
+            var match = Regex.Match(str, @"^([\d.]+)\s*([KMGTPEZY]i?B?)?$", RegexOptions.IgnoreCase);
+            if (!match.Success) return 0;
+
+            if (!double.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
+            {
+                return 0;
+            }
+
+            var unit = match.Groups[2].Value.ToUpperInvariant();
+            if (unit.StartsWith("P")) return (long)(num * 1024L * 1024L * 1024L * 1024L * 1024L);
+            if (unit.StartsWith("T")) return (long)(num * 1024L * 1024L * 1024L * 1024L);
+            if (unit.StartsWith("G")) return (long)(num * 1024L * 1024L * 1024L);
+            if (unit.StartsWith("M")) return (long)(num * 1024L * 1024L);
+            if (unit.StartsWith("K")) return (long)(num * 1024L);
+
+            return (long)(num * 1024L);
         }
 
         private static DriveInfo? GetDriveInfoForPath(string path)

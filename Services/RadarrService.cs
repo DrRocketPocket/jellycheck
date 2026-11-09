@@ -99,7 +99,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 req.Headers.TryAddWithoutValidation("X-Api-Key", cleanKey);
                 req.Headers.TryAddWithoutValidation("Accept", "application/json");
 
-                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(6));
+                using var resp = await _http.SendAsync(req, cts.Token).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
                     var body = string.Empty;
@@ -139,6 +140,10 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     return (list, $"OK ({list.Count} items)");
                 }
                 return (null, "Valid JSON received but no disks with TotalSpace > 0");
+            }
+            catch (OperationCanceledException)
+            {
+                return (null, "Connection timed out (6s).");
             }
             catch (Exception ex)
             {
@@ -221,7 +226,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 req.Headers.TryAddWithoutValidation("X-Api-Key", cleanKey);
                 req.Headers.TryAddWithoutValidation("Accept", "application/json");
 
-                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(6));
+                using var resp = await _http.SendAsync(req, cts.Token).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
                     _logger?.LogWarning("[Jellycheck/Radarr] GET /movie?tmdbId={TmdbId} returned {Status}", tmdbId, resp.StatusCode);
@@ -275,7 +281,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 using var req = new HttpRequestMessage(HttpMethod.Delete, url);
                 req.Headers.TryAddWithoutValidation("X-Api-Key", cleanKey);
 
-                using var resp = await _http.SendAsync(req).ConfigureAwait(false);
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(6));
+                using var resp = await _http.SendAsync(req, cts.Token).ConfigureAwait(false);
                 if (resp.IsSuccessStatusCode)
                 {
                     _logger?.LogInformation("[Jellycheck/Radarr] Deleted movie ID {Id} (deleteFiles=true, addImportExclusion=false)", radarrId);

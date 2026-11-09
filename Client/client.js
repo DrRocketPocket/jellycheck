@@ -223,9 +223,13 @@
                 const headers = { 'Accept': 'application/json' };
                 if (token) {
                     headers['Authorization'] = `MediaBrowser Client="Jellycheck", Device="Web", DeviceId="JellycheckWeb", Version="1.0.0", Token="${token}"`;
+                    headers['X-Emby-Token'] = token;
+                    headers['X-MediaBrowser-Token'] = token;
                 }
                 const response = await fetch(url, { headers });
-                data = await response.json();
+                if (response.ok) {
+                    data = await response.json();
+                }
             }
             
             watchedCache = {};
@@ -261,9 +265,13 @@
                 const headers = { 'Accept': 'application/json' };
                 if (token) {
                     headers['Authorization'] = `MediaBrowser Client="Jellycheck", Device="Web", DeviceId="JellycheckWeb", Version="1.0.0", Token="${token}"`;
+                    headers['X-Emby-Token'] = token;
+                    headers['X-MediaBrowser-Token'] = token;
                 }
                 const response = await fetch(url, { headers });
-                data = await response.json();
+                if (response.ok) {
+                    data = await response.json();
+                }
             }
 
             if (data) {

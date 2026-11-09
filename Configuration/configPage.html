@@ -353,7 +353,7 @@
                 <h1 class="jellycheck-title">Jellycheck</h1>
                 <div class="jellycheck-subtitle">Watched status avatars & storage monitor plugin</div>
             </div>
-            <span class="jellycheck-badge">v1.0.0.15</span>
+            <span class="jellycheck-badge">v1.0.0.16</span>
         </div>
 
         <!-- Active notice -->
@@ -712,65 +712,99 @@
 
             // ── Storage Status ──────────────────────────────────────────────
 
+            function getProp(obj, key) {
+                if (!obj) return undefined;
+                if (obj[key] !== undefined) return obj[key];
+                var lower = key.charAt(0).toLowerCase() + key.slice(1);
+                if (obj[lower] !== undefined) return obj[lower];
+                var upper = key.charAt(0).toUpperCase() + key.slice(1);
+                if (obj[upper] !== undefined) return obj[upper];
+                return undefined;
+            }
+
             function loadStorageInfo(forceRefresh) {
-                var url = (window.ApiClient && typeof window.ApiClient.getUrl === 'function')
-                    ? window.ApiClient.getUrl('jellycheck/storage' + (forceRefresh ? '?refresh=true' : ''))
-                    : (window.location.pathname.split('/web/')[0] || '') + '/jellycheck/storage' + (forceRefresh ? '?refresh=true' : '');
-
-                var headers = Object.assign({ 'Accept': 'application/json' }, getAuthHeaders());
-
+                var endpoint = 'jellycheck/storage' + (forceRefresh ? '?refresh=true' : '');
                 var freeEl = document.getElementById('jc-storage-free-val');
                 if (freeEl && forceRefresh) freeEl.innerText = 'Checking...';
 
-                fetch(url, { headers: headers })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        var freeEl = document.getElementById('jc-storage-free-val');
-                        var totalEl = document.getElementById('jc-storage-total-val');
-                        var sourceEl = document.getElementById('jc-storage-source-val');
-                        var barEl = document.getElementById('jc-storage-bar-val');
-                        var diagEl = document.getElementById('jc-storage-diag');
+                function handleData(data) {
+                    var freeEl = document.getElementById('jc-storage-free-val');
+                    var totalEl = document.getElementById('jc-storage-total-val');
+                    var sourceEl = document.getElementById('jc-storage-source-val');
+                    var barEl = document.getElementById('jc-storage-bar-val');
+                    var diagEl = document.getElementById('jc-storage-diag');
 
-                        if (diagEl) {
-                            if (data && data.diagnostics && data.diagnostics.length > 0) {
-                                diagEl.textContent = data.diagnostics.join('\n');
-                                diagEl.style.display = 'block';
-                            } else {
-                                diagEl.style.display = 'none';
-                            }
-                        }
-
-                        if (data && data.totalSpace > 0) {
-                            if (freeEl) freeEl.innerText = (data.freeSpaceFormatted || '0 B') + ' free';
-                            if (totalEl) totalEl.innerText = (data.usedSpaceFormatted || '0 B') + ' / ' + (data.totalSpaceFormatted || '0 B') + ' (' + data.percentUsed + '%)';
-                            if (sourceEl) sourceEl.innerText = data.source || 'Detected';
-                            if (barEl) {
-                                barEl.style.width = Math.min(100, Math.max(0, data.percentUsed)) + '%';
-                                if (data.percentUsed >= 90) {
-                                    barEl.style.background = 'linear-gradient(90deg, #ff5252, #f44336)';
-                                } else if (data.percentUsed >= 80) {
-                                    barEl.style.background = 'linear-gradient(90deg, #ffb300, #ff7043)';
-                                } else {
-                                    barEl.style.background = 'linear-gradient(90deg, #00f2fe, #4facfe)';
-                                }
-                            }
-                        } else {
-                            if (freeEl) freeEl.innerText = 'Unavailable';
-                            if (totalEl) totalEl.innerText = (data && data.message) ? data.message : 'Configure Sonarr/Radarr';
-                            if (sourceEl) sourceEl.innerText = (data && data.source) ? data.source : 'None';
-                            if (barEl) barEl.style.width = '0%';
-                        }
-                    })
-                    .catch(function(err) {
-                        console.warn('[Jellycheck] Failed to load storage info:', err);
-                        var freeEl = document.getElementById('jc-storage-free-val');
-                        if (freeEl) freeEl.innerText = 'Error loading';
-                        var diagEl = document.getElementById('jc-storage-diag');
-                        if (diagEl) {
-                            diagEl.textContent = 'Network or API error: ' + (err && err.message ? err.message : err);
+                    if (diagEl) {
+                        if (data && data.diagnostics && data.diagnostics.length > 0) {
+                            diagEl.textContent = data.diagnostics.join('\n');
                             diagEl.style.display = 'block';
+                        } else {
+                            diagEl.style.display = 'none';
                         }
+                    }
+
+                    if (data && data.totalSpace > 0) {
+                        if (freeEl) freeEl.innerText = (data.freeSpaceFormatted || '0 B') + ' free';
+                        if (totalEl) totalEl.innerText = (data.usedSpaceFormatted || '0 B') + ' / ' + (data.totalSpaceFormatted || '0 B') + ' (' + data.percentUsed + '%)';
+                        if (sourceEl) sourceEl.innerText = data.source || 'Detected';
+                        if (barEl) {
+                            barEl.style.width = Math.min(100, Math.max(0, data.percentUsed)) + '%';
+                            if (data.percentUsed >= 90) {
+                                barEl.style.background = 'linear-gradient(90deg, #ff5252, #f44336)';
+                            } else if (data.percentUsed >= 80) {
+                                barEl.style.background = 'linear-gradient(90deg, #ffb300, #ff7043)';
+                            } else {
+                                barEl.style.background = 'linear-gradient(90deg, #00f2fe, #4facfe)';
+                            }
+                        }
+                    } else {
+                        if (freeEl) freeEl.innerText = 'Unavailable';
+                        if (totalEl) totalEl.innerText = (data && data.message) ? data.message : 'Configure Sonarr/Radarr';
+                        if (sourceEl) sourceEl.innerText = (data && data.source) ? data.source : 'None';
+                        if (barEl) barEl.style.width = '0%';
+                    }
+                }
+
+                function handleError(err) {
+                    console.warn('[Jellycheck] Failed to load storage info:', err);
+                    var freeEl = document.getElementById('jc-storage-free-val');
+                    if (freeEl) freeEl.innerText = 'Error loading';
+                    var totalEl = document.getElementById('jc-storage-total-val');
+                    if (totalEl) totalEl.innerText = (err && err.message) ? err.message : 'Connection failed';
+                    var diagEl = document.getElementById('jc-storage-diag');
+                    if (diagEl) {
+                        diagEl.textContent = 'API Error: ' + (err && err.message ? err.message : String(err));
+                        diagEl.style.display = 'block';
+                    }
+                }
+
+                if (window.ApiClient && typeof window.ApiClient.getJSON === 'function') {
+                    var apiUrl = (typeof window.ApiClient.getUrl === 'function')
+                        ? window.ApiClient.getUrl(endpoint)
+                        : endpoint;
+                    window.ApiClient.getJSON(apiUrl).then(handleData).catch(function(err) {
+                        fallbackFetchStorage(endpoint, handleData, handleError);
                     });
+                } else {
+                    fallbackFetchStorage(endpoint, handleData, handleError);
+                }
+            }
+
+            function fallbackFetchStorage(endpoint, onSuccess, onError) {
+                var url = (window.ApiClient && typeof window.ApiClient.getUrl === 'function')
+                    ? window.ApiClient.getUrl(endpoint)
+                    : (window.location.pathname.split('/web/')[0] || '') + '/' + endpoint;
+
+                var headers = Object.assign({ 'Accept': 'application/json' }, getAuthHeaders());
+                fetch(url, { headers: headers })
+                    .then(function(r) {
+                        if (!r.ok) {
+                            throw new Error('HTTP ' + r.status + ' ' + r.statusText);
+                        }
+                        return r.json();
+                    })
+                    .then(onSuccess)
+                    .catch(onError);
             }
 
             // ── Auto-Delete Settings ────────────────────────────────────────
@@ -820,38 +854,52 @@
 
             function applySettings(cfg) {
                 if (!cfg) return;
-                setVal('jc-EnableAutoDelete',          cfg.EnableAutoDelete);
-                setVal('jc-DeleteDelayDays',           cfg.DeleteDelayDays);
-                setVal('jc-EnableMovieAutoDelete',     cfg.EnableMovieAutoDelete);
-                setVal('jc-MovieDeleteDelayDays',      cfg.MovieDeleteDelayDays);
-                setVal('jc-SkipIfFavorited',           cfg.SkipIfFavorited);
-                setVal('jc-SonarrUrl',                 cfg.SonarrUrl);
-                setVal('jc-SonarrApiKey',              cfg.SonarrApiKey);
-                setVal('jc-RadarrUrl',                 cfg.RadarrUrl);
-                setVal('jc-RadarrApiKey',              cfg.RadarrApiKey);
-                setVal('jc-OverseerrUrl',              cfg.OverseerrUrl);
-                setVal('jc-OverseerrApiKey',           cfg.OverseerrApiKey);
-                setVal('jc-ShowStorageOnHomePage',     cfg.ShowStorageOnHomePage !== false);
-                setVal('jc-NotifyUsersBeforeDeletion', cfg.NotifyUsersBeforeDeletion);
-                setVal('jc-NotifyDaysBeforeDeletion',  cfg.NotifyDaysBeforeDeletion);
+                setVal('jc-EnableAutoDelete',          getProp(cfg, 'EnableAutoDelete'));
+                setVal('jc-DeleteDelayDays',           getProp(cfg, 'DeleteDelayDays'));
+                setVal('jc-EnableMovieAutoDelete',     getProp(cfg, 'EnableMovieAutoDelete'));
+                setVal('jc-MovieDeleteDelayDays',      getProp(cfg, 'MovieDeleteDelayDays'));
+                setVal('jc-SkipIfFavorited',           getProp(cfg, 'SkipIfFavorited'));
+                setVal('jc-SonarrUrl',                 getProp(cfg, 'SonarrUrl'));
+                setVal('jc-SonarrApiKey',              getProp(cfg, 'SonarrApiKey'));
+                setVal('jc-RadarrUrl',                 getProp(cfg, 'RadarrUrl'));
+                setVal('jc-RadarrApiKey',              getProp(cfg, 'RadarrApiKey'));
+                setVal('jc-OverseerrUrl',              getProp(cfg, 'OverseerrUrl'));
+                setVal('jc-OverseerrApiKey',           getProp(cfg, 'OverseerrApiKey'));
+                setVal('jc-ShowStorageOnHomePage',     getProp(cfg, 'ShowStorageOnHomePage') !== false);
+                setVal('jc-NotifyUsersBeforeDeletion', getProp(cfg, 'NotifyUsersBeforeDeletion'));
+                setVal('jc-NotifyDaysBeforeDeletion',  getProp(cfg, 'NotifyDaysBeforeDeletion'));
             }
 
             function saveSettings() {
                 var cfg = {
                     EnableAutoDelete:          getVal('jc-EnableAutoDelete'),
+                    enableAutoDelete:          getVal('jc-EnableAutoDelete'),
                     DeleteDelayDays:           parseInt(getVal('jc-DeleteDelayDays'), 10) || 14,
+                    deleteDelayDays:           parseInt(getVal('jc-DeleteDelayDays'), 10) || 14,
                     EnableMovieAutoDelete:     getVal('jc-EnableMovieAutoDelete'),
+                    enableMovieAutoDelete:     getVal('jc-EnableMovieAutoDelete'),
                     MovieDeleteDelayDays:      parseInt(getVal('jc-MovieDeleteDelayDays'), 10) || 7,
+                    movieDeleteDelayDays:      parseInt(getVal('jc-MovieDeleteDelayDays'), 10) || 7,
                     SkipIfFavorited:           getVal('jc-SkipIfFavorited'),
+                    skipIfFavorited:           getVal('jc-SkipIfFavorited'),
                     SonarrUrl:                 getVal('jc-SonarrUrl'),
+                    sonarrUrl:                 getVal('jc-SonarrUrl'),
                     SonarrApiKey:              getVal('jc-SonarrApiKey'),
+                    sonarrApiKey:              getVal('jc-SonarrApiKey'),
                     RadarrUrl:                 getVal('jc-RadarrUrl'),
+                    radarrUrl:                 getVal('jc-RadarrUrl'),
                     RadarrApiKey:              getVal('jc-RadarrApiKey'),
+                    radarrApiKey:              getVal('jc-RadarrApiKey'),
                     OverseerrUrl:              getVal('jc-OverseerrUrl'),
+                    overseerrUrl:              getVal('jc-OverseerrUrl'),
                     OverseerrApiKey:           getVal('jc-OverseerrApiKey'),
+                    overseerrApiKey:           getVal('jc-OverseerrApiKey'),
                     ShowStorageOnHomePage:     getVal('jc-ShowStorageOnHomePage'),
+                    showStorageOnHomePage:     getVal('jc-ShowStorageOnHomePage'),
                     NotifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
-                    NotifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3
+                    notifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
+                    NotifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3,
+                    notifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3
                 };
 
                 function onSuccess() {

@@ -105,10 +105,20 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
         [HttpGet("watched")]
         public ActionResult<Dictionary<Guid, List<UserDto>>> GetWatchedItems()
         {
-            var currentUser = GetCurrentUser();
-            if (currentUser == null)
+            var claimsUser = HttpContext.User;
+            bool isAuthenticated = claimsUser?.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated)
             {
-                return Unauthorized();
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                var embyToken = Request.Headers["X-Emby-Token"].FirstOrDefault() 
+                                ?? Request.Headers["X-MediaBrowser-Token"].FirstOrDefault()
+                                ?? Request.Query["api_key"].FirstOrDefault();
+
+                if (string.IsNullOrEmpty(authHeader) && string.IsNullOrEmpty(embyToken))
+                {
+                    return Unauthorized();
+                }
             }
 
             var watchedMap = new Dictionary<Guid, List<UserDto>>();
@@ -215,10 +225,20 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
         [HttpGet("storage")]
         public async Task<ActionResult<StorageInfoDto>> GetStorage([FromQuery] bool refresh = false)
         {
-            var currentUser = GetCurrentUser();
-            if (currentUser == null)
+            var claimsUser = HttpContext.User;
+            bool isAuthenticated = claimsUser?.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated)
             {
-                return Unauthorized();
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                var embyToken = Request.Headers["X-Emby-Token"].FirstOrDefault() 
+                                ?? Request.Headers["X-MediaBrowser-Token"].FirstOrDefault()
+                                ?? Request.Query["api_key"].FirstOrDefault();
+
+                if (string.IsNullOrEmpty(authHeader) && string.IsNullOrEmpty(embyToken))
+                {
+                    return Unauthorized();
+                }
             }
 
             try
@@ -260,10 +280,20 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
         [HttpGet("status")]
         public IActionResult GetStatus()
         {
-            var currentUser = GetCurrentUser();
-            if (currentUser == null)
+            var claimsUser = HttpContext.User;
+            bool isAuthenticated = claimsUser?.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated)
             {
-                return Unauthorized();
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                var embyToken = Request.Headers["X-Emby-Token"].FirstOrDefault() 
+                                ?? Request.Headers["X-MediaBrowser-Token"].FirstOrDefault()
+                                ?? Request.Query["api_key"].FirstOrDefault();
+
+                if (string.IsNullOrEmpty(authHeader) && string.IsNullOrEmpty(embyToken))
+                {
+                    return Unauthorized();
+                }
             }
 
             return Ok(new
