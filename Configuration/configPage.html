@@ -612,6 +612,16 @@
                 </div>
             </div>
 
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Storage Plan Size (GB)</strong>
+                    <small>Fallback when quota / Sonarr / Radarr are unavailable: your slot's total storage in GB (e.g. 6000 for a 6&nbsp;TB plan). Remaining space is estimated as plan size minus the size of all movies and episodes in your library. Leave empty to disable. Non-library files are not counted.</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="number" id="jc-StoragePlanSizeGB" min="0" step="1" placeholder="e.g. 6000" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e0e0e0;padding:8px 12px;width:140px;">
+                </div>
+            </div>
+
             <hr class="jc-section-divider">
 
             <!-- Notifications -->
@@ -866,6 +876,7 @@
                 setVal('jc-OverseerrUrl',              getProp(cfg, 'OverseerrUrl'));
                 setVal('jc-OverseerrApiKey',           getProp(cfg, 'OverseerrApiKey'));
                 setVal('jc-ShowStorageOnHomePage',     getProp(cfg, 'ShowStorageOnHomePage') !== false);
+                setVal('jc-StoragePlanSizeGB',         getProp(cfg, 'StoragePlanSizeGB') || '');
                 setVal('jc-NotifyUsersBeforeDeletion', getProp(cfg, 'NotifyUsersBeforeDeletion'));
                 setVal('jc-NotifyDaysBeforeDeletion',  getProp(cfg, 'NotifyDaysBeforeDeletion'));
             }
@@ -896,6 +907,8 @@
                     overseerrApiKey:           getVal('jc-OverseerrApiKey'),
                     ShowStorageOnHomePage:     getVal('jc-ShowStorageOnHomePage'),
                     showStorageOnHomePage:     getVal('jc-ShowStorageOnHomePage'),
+                    StoragePlanSizeGB:         parseFloat(getVal('jc-StoragePlanSizeGB')) || 0,
+                    storagePlanSizeGB:         parseFloat(getVal('jc-StoragePlanSizeGB')) || 0,
                     NotifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
                     notifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
                     NotifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3,

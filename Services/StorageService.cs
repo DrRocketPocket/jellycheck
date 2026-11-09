@@ -113,6 +113,36 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 allDisks.Add(quotaDisk);
             }
 
+            // ── Tier 1.5: Plan-based estimate from library media sizes ─────────
+            // Works on any server: user enters their plan size (e.g. 6000 GB) and we
+            // subtract the summed size of every movie/episode file in the library.
+            // Less exact than quota (non-library files are not counted), but has no
+            // external dependencies. Opt-in: only runs when StoragePlanSizeGB > 0.
+            DiskSpaceItem? planDisk = null;
+            if (quotaDisk == null && config.StoragePlanSizeGB > 0)
+            {
+                var (mediaBytes, itemCount) = TryGetLibraryUsage();
+                if (mediaBytes > 0)
+                {
+                    long planTotal = (long)(config.StoragePlanSizeGB * 1024L * 1024L * 1024L);
+                    long planFree = Math.Max(0, planTotal - mediaBytes);
+                    planDisk = new DiskSpaceItem
+                    {
+                        Path = "Media Library",
+                        Label = "Library vs " + FormatBytes(planTotal) + " plan",
+                        TotalSpace = planTotal,
+                        FreeSpace = planFree
+                    };
+                    primarySource = "Library Estimate (Plan)";
+                    allDisks.Add(planDisk);
+                    diag.Add($"Plan-based estimate: {itemCount} media files use {FormatBytes(mediaBytes)} of a {FormatBytes(planTotal)} plan → {FormatBytes(planFree)} free. Non-library files are not counted.");
+                }
+                else
+                {
+                    diag.Add("Plan size is configured but no media file sizes were found in the library yet.");
+                }
+            }
+
             // ── Tier 2: Sonarr (Configured or Auto-discovered) ─────────────────
             bool sonarrConfigured = !string.IsNullOrWhiteSpace(config.SonarrUrl);
             bool sonarrQueried = false;
@@ -309,6 +339,12 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 freeSpace = quotaDisk.FreeSpace;
                 primarySource = "Ultra.cc Storage Quota";
             }
+            else if (planDisk != null && planDisk.TotalSpace > 0)
+            {
+                totalSpace = planDisk.TotalSpace;
+                freeSpace = planDisk.FreeSpace;
+                primarySource = "Library Estimate (Plan)";
+            }
             else if (allDisks.Count > 0)
             {
                 totalSpace = allDisks.Sum(d => d.TotalSpace);
@@ -369,6 +405,43 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Sums the file sizes of all movies and episodes in the library.
+        /// Used for the plan-based storage estimate (Tier 1.5).
+        /// </summary>
+        private (long TotalBytes, int ItemCount) TryGetLibraryUsage()
+        {
+            if (_libraryManager == null) return (0, 0);
+
+            try
+            {
+                var query = new MediaBrowser.Controller.Entities.InternalItemsQuery
+                {
+                    Recursive = true,
+                    IncludeItemTypes = new[] { Jellyfin.Data.Enums.BaseItemKind.Movie, Jellyfin.Data.Enums.BaseItemKind.Episode }
+                };
+
+                var items = _libraryManager.GetItemList(query);
+                long total = 0;
+                int count = 0;
+                foreach (var item in items)
+                {
+                    var size = item?.Size;
+                    if (size.HasValue && size.Value > 0)
+                    {
+                        total += size.Value;
+                        count++;
+                    }
+                }
+                return (total, count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[Jellycheck/Storage] Failed to sum library item sizes.");
+                return (0, 0);
+            }
         }
 
         private string? DetectSlotUsername()

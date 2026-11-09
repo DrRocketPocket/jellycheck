@@ -47,6 +47,14 @@ namespace Jellyfin.Plugin.Jellycheck.Configuration
         /// <summary>Display a storage progress bar on the Jellyfin home page for all users.</summary>
         public bool ShowStorageOnHomePage { get; set; } = true;
 
+        /// <summary>
+        /// Total storage of your slot/server plan in GB (e.g. 6000 for a 6 TB seedbox plan).
+        /// When set, storage is estimated as: plan size minus the size of all media files
+        /// in the library — works where quota/Sonarr/Radarr are unavailable.
+        /// 0 = disabled.
+        /// </summary>
+        public double StoragePlanSizeGB { get; set; } = 0;
+
         // ── Notifications ────────────────────────────────────────────────────
         /// <summary>Send a Jellyfin server notification before content is auto-deleted.</summary>
         public bool NotifyUsersBeforeDeletion { get; set; } = false;
