@@ -17,7 +17,6 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
 {
     [ApiController]
     [Route("jellycheck")]
-    [Authorize]
     public class WatchedStatusController : ControllerBase
     {
         private readonly IUserManager _userManager;

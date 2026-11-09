@@ -94,13 +94,34 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             string primarySource = "None";
             string statusMessage = string.Empty;
 
-            // 1. Try Configured Sonarr
+            var slotUser = DetectSlotUsername();
+            if (!string.IsNullOrEmpty(slotUser))
+            {
+                diag.Add($"Detected environment user: '{slotUser}'.");
+            }
+
+            // ── Tier 1: Ultra.cc / Linux System Quota (quota -s) ───────────────
+            // On seedboxes like Ultra.cc, Linux user quota gives the exact account plan limit
+            // (e.g. 136 GB free of 6,000 GB), whereas Radarr only sees the physical 14.5 TB shared array.
+            DiskSpaceItem? quotaDisk = null;
+            var (qDisk, quotaLog) = await TryGetSystemQuotaAsync(slotUser).ConfigureAwait(false);
+            diag.Add(quotaLog);
+            if (qDisk != null && qDisk.TotalSpace > 0)
+            {
+                quotaDisk = qDisk;
+                primarySource = "Ultra.cc Storage Quota";
+                allDisks.Add(quotaDisk);
+            }
+
+            // ── Tier 2: Sonarr (Configured or Auto-discovered) ─────────────────
             bool sonarrConfigured = !string.IsNullOrWhiteSpace(config.SonarrUrl);
+            bool sonarrQueried = false;
+
             if (sonarrConfigured)
             {
                 if (string.IsNullOrWhiteSpace(config.SonarrApiKey))
                 {
-                    diag.Add($"Sonarr URL is set ({config.SonarrUrl}) but API Key is empty.");
+                    diag.Add($"Sonarr URL is configured ({config.SonarrUrl}) but API Key is empty.");
                 }
                 else
                 {
@@ -108,23 +129,17 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     diag.Add(sonarrLog);
                     if (sonarrDisks != null && sonarrDisks.Count > 0)
                     {
-                        primarySource = "Sonarr";
-                        foreach (var disk in sonarrDisks)
-                        {
-                            AddIfDistinct(allDisks, disk);
-                        }
+                        sonarrQueried = true;
+                        if (primarySource == "None") primarySource = "Sonarr";
+                        foreach (var disk in sonarrDisks) AddIfDistinct(allDisks, disk);
                     }
                 }
             }
-            else
-            {
-                diag.Add("Sonarr is not configured in settings.");
-            }
 
-            // 1b. If Sonarr not configured or failed, try local Sonarr auto-discovery (e.g. Ultra.cc ~/.apps/sonarr)
-            if (allDisks.Count == 0)
+            // Try local slot auto-discovery for Sonarr if configured query didn't return disks
+            if (!sonarrQueried)
             {
-                var discovered = TryAutoDiscoverApp("Sonarr");
+                var discovered = TryAutoDiscoverApp("Sonarr", slotUser);
                 if (discovered != null)
                 {
                     diag.Add($"Auto-discovered local Sonarr at {discovered.Value.Url}. Testing...");
@@ -132,22 +147,21 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     diag.Add("Local slot " + localLog);
                     if (localDisks != null && localDisks.Count > 0)
                     {
-                        primarySource = "Sonarr (Local slot)";
-                        foreach (var disk in localDisks)
-                        {
-                            AddIfDistinct(allDisks, disk);
-                        }
+                        if (primarySource == "None") primarySource = "Sonarr (Local slot)";
+                        foreach (var disk in localDisks) AddIfDistinct(allDisks, disk);
                     }
                 }
             }
 
-            // 2. Try Configured Radarr
+            // ── Tier 3: Radarr (Configured or Auto-discovered) ─────────────────
             bool radarrConfigured = !string.IsNullOrWhiteSpace(config.RadarrUrl);
+            bool radarrQueried = false;
+
             if (radarrConfigured)
             {
                 if (string.IsNullOrWhiteSpace(config.RadarrApiKey))
                 {
-                    diag.Add($"Radarr URL is set ({config.RadarrUrl}) but API Key is empty.");
+                    diag.Add($"Radarr URL is configured ({config.RadarrUrl}) but API Key is empty.");
                 }
                 else
                 {
@@ -155,25 +169,19 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     diag.Add(radarrLog);
                     if (radarrDisks != null && radarrDisks.Count > 0)
                     {
+                        radarrQueried = true;
                         if (primarySource == "None") primarySource = "Radarr";
-                        else primarySource = "Sonarr / Radarr";
+                        else if (primarySource != "Ultra.cc Storage Quota") primarySource = "Sonarr / Radarr";
 
-                        foreach (var disk in radarrDisks)
-                        {
-                            AddIfDistinct(allDisks, disk);
-                        }
+                        foreach (var disk in radarrDisks) AddIfDistinct(allDisks, disk);
                     }
                 }
             }
-            else
-            {
-                diag.Add("Radarr is not configured in settings.");
-            }
 
-            // 2b. If Radarr not configured or failed, try local Radarr auto-discovery (e.g. Ultra.cc ~/.apps/radarr)
-            if (allDisks.Count == 0)
+            // Try local slot auto-discovery for Radarr if configured query didn't return disks
+            if (!radarrQueried)
             {
-                var discovered = TryAutoDiscoverApp("Radarr");
+                var discovered = TryAutoDiscoverApp("Radarr", slotUser);
                 if (discovered != null)
                 {
                     diag.Add($"Auto-discovered local Radarr at {discovered.Value.Url}. Testing...");
@@ -182,29 +190,14 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     if (localDisks != null && localDisks.Count > 0)
                     {
                         if (primarySource == "None") primarySource = "Radarr (Local slot)";
-                        else primarySource = "Sonarr / Radarr";
+                        else if (primarySource != "Ultra.cc Storage Quota") primarySource = "Sonarr / Radarr";
 
-                        foreach (var disk in localDisks)
-                        {
-                            AddIfDistinct(allDisks, disk);
-                        }
+                        foreach (var disk in localDisks) AddIfDistinct(allDisks, disk);
                     }
                 }
             }
 
-            // 3. Try Ultra.cc / Linux System Quota (quota -s -w)
-            if (allDisks.Count == 0)
-            {
-                var (quotaDisk, quotaLog) = await TryGetSystemQuotaAsync().ConfigureAwait(false);
-                diag.Add(quotaLog);
-                if (quotaDisk != null && quotaDisk.TotalSpace > 0)
-                {
-                    primarySource = "Ultra.cc System Quota";
-                    AddIfDistinct(allDisks, quotaDisk);
-                }
-            }
-
-            // 4. Try Jellyfin configured media library directories
+            // ── Tier 4: Jellyfin Media Library Directories ────────────────────
             if (allDisks.Count == 0)
             {
                 try
@@ -243,7 +236,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                         }
                     }
 
-                    // Fallback to data path
+                    // Fallback to DataPath
                     if (allDisks.Count == 0)
                     {
                         var dataPath = _applicationPaths?.DataPath;
@@ -272,7 +265,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                         }
                     }
 
-                    // Fallback to DriveInfo.GetDrives()
+                    // Fallback to host drives
                     if (allDisks.Count == 0)
                     {
                         var hostDrives = DriveInfo.GetDrives()
@@ -304,20 +297,36 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 }
             }
 
-            if (allDisks.Count == 0)
+            // ── Space Calculation ─────────────────────────────────────────────
+            long totalSpace = 0;
+            long freeSpace = 0;
+
+            // If Ultra.cc system quota was detected, use it as the definitive total and free space
+            // so that user account limits (e.g. 136 GB free / 6000 GB) are shown instead of the physical host disk
+            if (quotaDisk != null && quotaDisk.TotalSpace > 0)
+            {
+                totalSpace = quotaDisk.TotalSpace;
+                freeSpace = quotaDisk.FreeSpace;
+                primarySource = "Ultra.cc Storage Quota";
+            }
+            else if (allDisks.Count > 0)
+            {
+                totalSpace = allDisks.Sum(d => d.TotalSpace);
+                freeSpace = allDisks.Sum(d => d.FreeSpace);
+            }
+
+            if (totalSpace == 0)
             {
                 if (sonarrConfigured || radarrConfigured)
                 {
-                    statusMessage = "Unable to connect to configured Sonarr/Radarr. Check diagnostics.";
+                    statusMessage = "Unable to reach Sonarr/Radarr. Check diagnostics.";
                 }
                 else
                 {
-                    statusMessage = "No disks or quota found. Configure Sonarr/Radarr in settings.";
+                    statusMessage = "Storage details unavailable. Configure Sonarr/Radarr in settings.";
                 }
             }
 
-            long totalSpace = allDisks.Sum(d => d.TotalSpace);
-            long freeSpace = allDisks.Sum(d => d.FreeSpace);
             long usedSpace = Math.Max(0, totalSpace - freeSpace);
             double pctUsed = totalSpace > 0 ? Math.Round((double)usedSpace / totalSpace * 100.0, 1) : 0.0;
 
@@ -354,7 +363,6 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             lock (_cacheLock)
             {
                 _cachedStorage = result;
-                // Only cache successful results for 2 minutes; retry failures quickly (5 seconds)
                 _cacheExpires = totalSpace > 0
                     ? DateTime.UtcNow.AddMinutes(2)
                     : DateTime.UtcNow.AddSeconds(5);
@@ -363,10 +371,31 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             return result;
         }
 
+        private string? DetectSlotUsername()
+        {
+            try
+            {
+                var dataPath = _applicationPaths?.DataPath;
+                if (!string.IsNullOrEmpty(dataPath))
+                {
+                    var match = Regex.Match(dataPath, @"/home(?:[0-9]+)?/([^/]+)", RegexOptions.IgnoreCase);
+                    if (match.Success)
+                    {
+                        return match.Groups[1].Value;
+                    }
+                }
+                var user = Environment.GetEnvironmentVariable("USER") ?? Environment.GetEnvironmentVariable("USERNAME");
+                if (!string.IsNullOrEmpty(user)) return user;
+            }
+            catch { }
+            return null;
+        }
+
         /// <summary>
-        /// Auto-discovers local Sonarr or Radarr installation configuration on seedboxes (e.g. Ultra.cc ~/.apps/{app}/config.xml).
+        /// Auto-discovers local Sonarr or Radarr installation configuration on seedboxes.
+        /// Checks slot directories like /home/{user}/.apps/{app}/config.xml and ~/.config/{app}/config.xml.
         /// </summary>
-        private static (string Url, string ApiKey)? TryAutoDiscoverApp(string appName)
+        private static (string Url, string ApiKey)? TryAutoDiscoverApp(string appName, string? slotUser)
         {
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             if (string.IsNullOrEmpty(home))
@@ -374,7 +403,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 home = Environment.GetEnvironmentVariable("HOME") ?? "/home";
             }
 
-            var candidatePaths = new[]
+            var candidatePaths = new List<string>
             {
                 Path.Combine(home, ".apps", appName.ToLowerInvariant(), "config.xml"),
                 Path.Combine(home, ".config", appName, "config.xml"),
@@ -382,6 +411,13 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 Path.Combine("/config", "config.xml"),
                 Path.Combine("/var/lib", appName.ToLowerInvariant(), "config.xml")
             };
+
+            if (!string.IsNullOrEmpty(slotUser))
+            {
+                candidatePaths.Insert(0, $"/home/{slotUser}/.apps/{appName.ToLowerInvariant()}/config.xml");
+                candidatePaths.Insert(1, $"/home/{slotUser}/.config/{appName}/config.xml");
+                candidatePaths.Insert(2, $"/home/{slotUser}/.config/{appName.ToLowerInvariant()}/config.xml");
+            }
 
             foreach (var path in candidatePaths)
             {
@@ -414,78 +450,87 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         }
 
         /// <summary>
-        /// Reads Linux user quota directly via 'quota -s -w' (native to seedboxes like Ultra.cc).
+        /// Reads Linux user quota directly via 'quota -s' (standard on Ultra.cc).
         /// </summary>
-        private static async Task<(DiskSpaceItem? Disk, string Log)> TryGetSystemQuotaAsync()
+        private static async Task<(DiskSpaceItem? Disk, string Log)> TryGetSystemQuotaAsync(string? slotUser)
         {
             if (Environment.OSVersion.Platform != PlatformID.Unix && 
                 Environment.OSVersion.Platform != PlatformID.MacOSX)
             {
-                return (null, "System quota check skipped: not running on Linux/Unix.");
+                return (null, "System quota skipped: not running on Linux/Unix.");
             }
 
-            try
+            var commandsToTry = new List<(string Cmd, string Args)>
             {
-                var candidateCommands = new[]
-                {
-                    ("quota", "-s -w"),
-                    ("quota", "-s"),
-                    ("quota", "-w"),
-                    ("/usr/bin/quota", "-s -w"),
-                    ("/usr/bin/quota", "-s")
-                };
+                ("quota", "-s"),
+                ("/usr/bin/quota", "-s"),
+                ("/bin/quota", "-s")
+            };
 
-                foreach (var (cmd, args) in candidateCommands)
+            if (!string.IsNullOrWhiteSpace(slotUser))
+            {
+                commandsToTry.Insert(1, ("quota", $"-s -u {slotUser}"));
+                commandsToTry.Insert(3, ("/usr/bin/quota", $"-s -u {slotUser}"));
+                commandsToTry.Insert(5, ("/bin/quota", $"-s -u {slotUser}"));
+            }
+
+            commandsToTry.Add(("quota", ""));
+            commandsToTry.Add(("/usr/bin/quota", ""));
+            commandsToTry.Add(("/bin/quota", ""));
+            commandsToTry.Add(("app-stats", "show"));
+            commandsToTry.Add(("/usr/local/bin/app-stats", "show"));
+            commandsToTry.Add(("/usr/bin/app-stats", "show"));
+
+            foreach (var (cmd, args) in commandsToTry)
+            {
+                try
                 {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = cmd,
+                        Arguments = args,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    using var proc = new Process { StartInfo = psi };
+                    if (!proc.Start()) continue;
+
+                    var outputTask = proc.StandardOutput.ReadToEndAsync();
+                    var errorTask = proc.StandardError.ReadToEndAsync();
+
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(3));
                     try
                     {
-                        var psi = new ProcessStartInfo
+                        await proc.WaitForExitAsync(cts.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        try { proc.Kill(); } catch { }
+                        continue;
+                    }
+
+                    var output = await outputTask.ConfigureAwait(false);
+                    var error = await errorTask.ConfigureAwait(false);
+
+                    if (proc.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
+                    {
+                        var disk = ParseQuotaOutput(output) ?? ParseAppStatsOutput(output);
+                        if (disk != null && disk.TotalSpace > 0)
                         {
-                            FileName = cmd,
-                            Arguments = args,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-
-                        using var proc = Process.Start(psi);
-                        if (proc == null) continue;
-
-                        var outputTask = proc.StandardOutput.ReadToEndAsync();
-                        var errTask = proc.StandardError.ReadToEndAsync();
-
-                        var finished = await Task.WhenAny(
-                            Task.Run(() => proc.WaitForExit(3000)), 
-                            Task.Delay(3000)
-                        ).ConfigureAwait(false);
-
-                        if (finished != Task.Delay(3000))
-                        {
-                            var output = await outputTask.ConfigureAwait(false);
-                            if (proc.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
-                            {
-                                var parsed = ParseQuotaOutput(output);
-                                if (parsed != null && parsed.TotalSpace > 0)
-                                {
-                                    return (parsed, $"Ultra.cc system quota detected ({parsed.Path}): {FormatBytes(parsed.FreeSpace)} free of {FormatBytes(parsed.TotalSpace)}.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            try { proc.Kill(); } catch { }
+                            return (disk, $"Ultra.cc system quota detected ({disk.Path}): {FormatBytes(disk.FreeSpace)} free of {FormatBytes(disk.TotalSpace)} ('{cmd} {args}').");
                         }
                     }
-                    catch { }
                 }
+                catch
+                {
+                    // Command not found or unavailable, continue to next
+                }
+            }
 
-                return (null, "System quota command (quota -s) executed but found no active user quota.");
-            }
-            catch (Exception ex)
-            {
-                return (null, $"System quota check error: {ex.Message}");
-            }
+            return (null, "No active Linux user quota detected via 'quota -s' or 'app-stats'.");
         }
 
         private static DiskSpaceItem? ParseQuotaOutput(string output)
@@ -518,22 +563,66 @@ namespace Jellyfin.Plugin.Jellycheck.Services
 
             if (tokens.Count < 4) return null;
 
-            string fs = tokens[0];
-            long used = ParseQuotaBytes(tokens[1]);
-            long soft = ParseQuotaBytes(tokens[2]);
-            long hard = ParseQuotaBytes(tokens[3]);
-            long total = Math.Max(hard, soft);
+            DiskSpaceItem? bestDisk = null;
 
-            if (total <= 0) return null;
-            long free = Math.Max(0, total - used);
-
-            return new DiskSpaceItem
+            for (int i = 0; i <= tokens.Count - 4; i++)
             {
-                Path = fs,
-                Label = "User Quota (" + fs + ")",
-                TotalSpace = total,
-                FreeSpace = free
-            };
+                var token = tokens[i];
+                // A filesystem token typically starts with '/' or a letter, but not a digit, '*', or '-'
+                if (string.IsNullOrEmpty(token) || char.IsDigit(token[0]) || token[0] == '*' || token[0] == '-')
+                {
+                    continue;
+                }
+
+                // If candidate is a filesystem name, the next 3 tokens are used, soft quota, hard limit
+                long used = ParseQuotaBytes(tokens[i + 1]);
+                long soft = ParseQuotaBytes(tokens[i + 2]);
+                long hard = ParseQuotaBytes(tokens[i + 3]);
+                long total = Math.Max(hard, soft);
+
+                if (total > 0)
+                {
+                    long free = Math.Max(0, total - used);
+                    var item = new DiskSpaceItem
+                    {
+                        Path = token,
+                        Label = "User Quota (" + token + ")",
+                        TotalSpace = total,
+                        FreeSpace = free
+                    };
+
+                    if (bestDisk == null || item.TotalSpace > bestDisk.TotalSpace)
+                    {
+                        bestDisk = item;
+                    }
+                }
+            }
+
+            return bestDisk;
+        }
+
+        private static DiskSpaceItem? ParseAppStatsOutput(string output)
+        {
+            if (string.IsNullOrWhiteSpace(output)) return null;
+
+            var match = Regex.Match(output, @"(?:Disk|Storage)[^:\r\n]*:\s*([\d.]+)\s*([KMGTPEZY]i?B?)\s*(?:/|of)\s*([\d.]+)\s*([KMGTPEZY]i?B?)", RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                long used = ParseQuotaBytes(match.Groups[1].Value + match.Groups[2].Value);
+                long total = ParseQuotaBytes(match.Groups[3].Value + match.Groups[4].Value);
+                if (total > 0)
+                {
+                    long free = Math.Max(0, total - used);
+                    return new DiskSpaceItem
+                    {
+                        Path = "Ultra.cc Slot",
+                        Label = "Ultra.cc Account Storage",
+                        TotalSpace = total,
+                        FreeSpace = free
+                    };
+                }
+            }
+            return null;
         }
 
         private static long ParseQuotaBytes(string str)
@@ -563,7 +652,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         {
             if (string.IsNullOrWhiteSpace(path)) return null;
 
-            // 1. Try direct DriveInfo (works on Windows and exact Linux mount points)
+            // 1. Direct DriveInfo (works on Windows and exact Linux mount points)
             try
             {
                 var direct = new DriveInfo(path);
@@ -571,7 +660,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
             catch { }
 
-            // 2. Try Path.GetPathRoot (works on Windows: "C:\")
+            // 2. Path.GetPathRoot (works on Windows: "C:\")
             try
             {
                 var root = Path.GetPathRoot(path);
@@ -583,7 +672,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
             catch { }
 
-            // 3. Match against DriveInfo.GetDrives() by longest mount prefix (essential for Linux/Unix subdirectories)
+            // 3. Match against DriveInfo.GetDrives() by longest mount prefix (for Linux/Unix subdirectories)
             try
             {
                 var fullPath = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
