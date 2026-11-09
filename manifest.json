@@ -12,7 +12,7 @@
         "changelog": "In-memory index.html script injection via IStartupFilter, shell quota command resolution, ignore non-zero quota exit code, and persistent home bar rendering.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.18/Jellycheck-10.11.zip",
-        "checksum": "42b1be312d2e7a3d94caddee67e25520",
+        "checksum": "9a86ea9ee14c06e227bebf672727dbab",
         "timestamp": "2026-11-09 18:30:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "In-memory index.html script injection via IStartupFilter, shell quota command resolution, ignore non-zero quota exit code, and persistent home bar rendering.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.18/Jellycheck-10.11.zip",
-        "checksum": "42b1be312d2e7a3d94caddee67e25520",
+        "checksum": "9a86ea9ee14c06e227bebf672727dbab",
         "timestamp": "2026-11-09 18:30:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "In-memory index.html script injection via IStartupFilter, shell quota command resolution, ignore non-zero quota exit code, and persistent home bar rendering.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.18/Jellycheck-10.11.zip",
-        "checksum": "42b1be312d2e7a3d94caddee67e25520",
+        "checksum": "9a86ea9ee14c06e227bebf672727dbab",
         "timestamp": "2026-11-09 18:30:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "In-memory index.html script injection via IStartupFilter, shell quota command resolution, ignore non-zero quota exit code, and persistent home bar rendering.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.18/Jellycheck-10.8.zip",
-        "checksum": "14143a00d0dbc94c356fe8c42281954d",
+        "checksum": "28c2965517eb9101da8189b848c6dadd",
         "timestamp": "2026-11-09 18:30:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "In-memory index.html script injection via IStartupFilter, shell quota command resolution, ignore non-zero quota exit code, and persistent home bar rendering.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.18/Jellycheck-10.8.zip",
-        "checksum": "14143a00d0dbc94c356fe8c42281954d",
+        "checksum": "28c2965517eb9101da8189b848c6dadd",
         "timestamp": "2026-11-09 18:30:00"
       }
     ]
