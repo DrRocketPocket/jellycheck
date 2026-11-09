@@ -353,7 +353,7 @@
                 <h1 class="jellycheck-title">Jellycheck</h1>
                 <div class="jellycheck-subtitle">Watched status avatars & storage monitor plugin</div>
             </div>
-            <span class="jellycheck-badge">v1.0.0.18</span>
+            <span class="jellycheck-badge" id="jellycheck-version-badge">v1.0.0.21</span>
         </div>
 
         <!-- Active notice -->
@@ -1011,6 +1011,47 @@
                 injectScript();
                 loadSettings();
                 loadStorageInfo(false);
+                loadVersionBadge();
+            }
+
+            // Show the version actually loaded by the server, not a hardcoded string —
+            // the badge can never lie about which DLL is running again.
+            function loadVersionBadge() {
+                var badge = document.getElementById('jellycheck-version-badge');
+                if (!badge) return;
+
+                var applyInfo = function (info) {
+                    if (info && info.Version) {
+                        badge.innerText = 'v' + info.Version;
+                        return true;
+                    }
+                    return false;
+                };
+                // Older servers have no GET /Plugins/{id}; fall back to the plugin list
+                var applyList = function (list) {
+                    var plainId = PLUGIN_ID.replace(/-/g, '');
+                    var hit = (list || []).filter(function (p) {
+                        return p && (p.Id === PLUGIN_ID || p.Id === plainId);
+                    })[0];
+                    applyInfo(hit);
+                };
+
+                var getJson = function (endpoint, onOk, onErr) {
+                    if (window.ApiClient && typeof window.ApiClient.getJSON === 'function') {
+                        var apiUrl = (typeof window.ApiClient.getUrl === 'function')
+                            ? window.ApiClient.getUrl(endpoint)
+                            : endpoint;
+                        window.ApiClient.getJSON(apiUrl).then(onOk).catch(onErr);
+                    } else {
+                        fallbackFetchStorage(endpoint, onOk, onErr);
+                    }
+                };
+
+                getJson('Plugins/' + PLUGIN_ID, function (info) {
+                    if (!applyInfo(info)) getJson('Plugins', applyList, function () {});
+                }, function () {
+                    getJson('Plugins', applyList, function () {});
+                });
             }
 
             if (document.readyState === 'loading') {

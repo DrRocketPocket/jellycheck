@@ -8,44 +8,44 @@
     "category": "UI",
     "versions": [
       {
-        "version": "1.0.0.20",
-        "changelog": "New plan-based storage estimate: set your slot plan size in GB and free space is calculated from the actual file sizes of all movies and episodes in your library. Works where quota, Sonarr and Radarr are unavailable.",
+        "version": "1.0.0.21",
+        "changelog": "Config page now shows the actually-loaded plugin version (dynamic badge) instead of a hardcoded string that could report a stale version after updating.",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.20/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.21/Jellycheck-10.11.zip",
         "checksum": "51c23a76027e8d3f3d3ef2046132f225",
-        "timestamp": "2026-11-09 21:05:00"
+        "timestamp": "2026-11-09 21:30:00"
       },
       {
-        "version": "1.0.0.20",
-        "changelog": "New plan-based storage estimate: set your slot plan size in GB and free space is calculated from the actual file sizes of all movies and episodes in your library. Works where quota, Sonarr and Radarr are unavailable.",
+        "version": "1.0.0.21",
+        "changelog": "Config page now shows the actually-loaded plugin version (dynamic badge) instead of a hardcoded string that could report a stale version after updating.",
         "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.20/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.21/Jellycheck-10.8.zip",
         "checksum": "239cae7040ded8f04236c061a668e3f3",
-        "timestamp": "2026-11-09 21:05:00"
+        "timestamp": "2026-11-09 21:30:00"
       },
       {
-        "version": "1.0.0.20",
-        "changelog": "New plan-based storage estimate: set your slot plan size in GB and free space is calculated from the actual file sizes of all movies and episodes in your library. Works where quota, Sonarr and Radarr are unavailable.",
+        "version": "1.0.0.21",
+        "changelog": "Config page now shows the actually-loaded plugin version (dynamic badge) instead of a hardcoded string that could report a stale version after updating.",
         "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.20/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.21/Jellycheck-10.8.zip",
         "checksum": "239cae7040ded8f04236c061a668e3f3",
-        "timestamp": "2026-11-09 21:05:00"
+        "timestamp": "2026-11-09 21:30:00"
       },
       {
-        "version": "1.0.0.20",
-        "changelog": "New plan-based storage estimate: set your slot plan size in GB and free space is calculated from the actual file sizes of all movies and episodes in your library. Works where quota, Sonarr and Radarr are unavailable.",
+        "version": "1.0.0.21",
+        "changelog": "Config page now shows the actually-loaded plugin version (dynamic badge) instead of a hardcoded string that could report a stale version after updating.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.20/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.21/Jellycheck-10.8.zip",
         "checksum": "239cae7040ded8f04236c061a668e3f3",
-        "timestamp": "2026-11-09 21:05:00"
+        "timestamp": "2026-11-09 21:30:00"
       },
       {
-        "version": "1.0.0.20",
-        "changelog": "New plan-based storage estimate: set your slot plan size in GB and free space is calculated from the actual file sizes of all movies and episodes in your library. Works where quota, Sonarr and Radarr are unavailable.",
+        "version": "1.0.0.21",
+        "changelog": "Config page now shows the actually-loaded plugin version (dynamic badge) instead of a hardcoded string that could report a stale version after updating.",
         "targetAbi": "10.7.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.20/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.21/Jellycheck-10.8.zip",
         "checksum": "239cae7040ded8f04236c061a668e3f3",
-        "timestamp": "2026-11-09 21:05:00"
+        "timestamp": "2026-11-09 21:30:00"
       }
     ]
   }
