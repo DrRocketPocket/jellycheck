@@ -297,8 +297,8 @@
         const homeSections = getHomeSectionsContainer();
         const existing = document.getElementById('jellycheck-storage-wrapper');
 
-        // If not on home page or storage is disabled, remove existing bar
-        if (!homeSections || (storageData && storageData.enabled === false)) {
+        // If not on home page, storage disabled, or no valid storage data (> 0), remove existing bar
+        if (!homeSections || (storageData && (storageData.enabled === false || !storageData.totalSpace || storageData.totalSpace <= 0))) {
             if (existing) existing.remove();
             return;
         }

@@ -353,7 +353,7 @@
                 <h1 class="jellycheck-title">Jellycheck</h1>
                 <div class="jellycheck-subtitle">Watched status avatars & storage monitor plugin</div>
             </div>
-            <span class="jellycheck-badge">v1.0.0.14</span>
+            <span class="jellycheck-badge">v1.0.0.15</span>
         </div>
 
         <!-- Active notice -->
@@ -413,6 +413,7 @@
                         <div id="jc-storage-bar-val" style="width:0%;height:100%;border-radius:6px;background:linear-gradient(90deg, #00f2fe, #4facfe);transition:width 0.6s ease;"></div>
                     </div>
                     <button id="jc-storage-refresh-btn" class="jellycheck-btn">Check Storage</button>
+                    <div id="jc-storage-diag" style="display:none;margin-top:12px;padding:10px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-family:monospace;font-size:0.75rem;color:#b0bec5;white-space:pre-wrap;max-height:160px;overflow-y:auto;"></div>
                 </div>
             </div>
 
@@ -728,6 +729,16 @@
                         var totalEl = document.getElementById('jc-storage-total-val');
                         var sourceEl = document.getElementById('jc-storage-source-val');
                         var barEl = document.getElementById('jc-storage-bar-val');
+                        var diagEl = document.getElementById('jc-storage-diag');
+
+                        if (diagEl) {
+                            if (data && data.diagnostics && data.diagnostics.length > 0) {
+                                diagEl.textContent = data.diagnostics.join('\n');
+                                diagEl.style.display = 'block';
+                            } else {
+                                diagEl.style.display = 'none';
+                            }
+                        }
 
                         if (data && data.totalSpace > 0) {
                             if (freeEl) freeEl.innerText = (data.freeSpaceFormatted || '0 B') + ' free';
@@ -754,6 +765,11 @@
                         console.warn('[Jellycheck] Failed to load storage info:', err);
                         var freeEl = document.getElementById('jc-storage-free-val');
                         if (freeEl) freeEl.innerText = 'Error loading';
+                        var diagEl = document.getElementById('jc-storage-diag');
+                        if (diagEl) {
+                            diagEl.textContent = 'Network or API error: ' + (err && err.message ? err.message : err);
+                            diagEl.style.display = 'block';
+                        }
                     });
             }
 
@@ -770,35 +786,54 @@
             }
 
             function getAuthHeaders() {
-                var token = window.ApiClient && window.ApiClient.accessToken
+                var token = (window.ApiClient && typeof window.ApiClient.accessToken === 'function')
                     ? window.ApiClient.accessToken()
-                    : null;
-                return token ? { 'Authorization': 'MediaBrowser Token="' + token + '"' } : {};
+                    : (window.ApiClient && window.ApiClient._token ? window.ApiClient._token : null);
+                if (!token) return {};
+                return {
+                    'Authorization': 'MediaBrowser Token="' + token + '"',
+                    'X-Emby-Token': token,
+                    'X-MediaBrowser-Token': token
+                };
             }
 
             function loadSettings() {
+                if (window.ApiClient && typeof window.ApiClient.getPluginConfiguration === 'function') {
+                    window.ApiClient.getPluginConfiguration(PLUGIN_ID).then(applySettings).catch(function(err) {
+                        console.warn('[Jellycheck] ApiClient.getPluginConfiguration failed, trying fetch fallback:', err);
+                        fallbackLoadSettings();
+                    });
+                } else {
+                    fallbackLoadSettings();
+                }
+            }
+
+            function fallbackLoadSettings() {
                 var url = getConfigUrl();
                 fetch(url, { headers: getAuthHeaders() })
                     .then(function(r) { return r.json(); })
-                    .then(function(cfg) {
-                        setVal('jc-EnableAutoDelete',          cfg.EnableAutoDelete);
-                        setVal('jc-DeleteDelayDays',           cfg.DeleteDelayDays);
-                        setVal('jc-EnableMovieAutoDelete',     cfg.EnableMovieAutoDelete);
-                        setVal('jc-MovieDeleteDelayDays',      cfg.MovieDeleteDelayDays);
-                        setVal('jc-SkipIfFavorited',           cfg.SkipIfFavorited);
-                        setVal('jc-SonarrUrl',                 cfg.SonarrUrl);
-                        setVal('jc-SonarrApiKey',              cfg.SonarrApiKey);
-                        setVal('jc-RadarrUrl',                 cfg.RadarrUrl);
-                        setVal('jc-RadarrApiKey',              cfg.RadarrApiKey);
-                        setVal('jc-OverseerrUrl',              cfg.OverseerrUrl);
-                        setVal('jc-OverseerrApiKey',           cfg.OverseerrApiKey);
-                        setVal('jc-ShowStorageOnHomePage',     cfg.ShowStorageOnHomePage !== false);
-                        setVal('jc-NotifyUsersBeforeDeletion', cfg.NotifyUsersBeforeDeletion);
-                        setVal('jc-NotifyDaysBeforeDeletion',  cfg.NotifyDaysBeforeDeletion);
-                    })
+                    .then(applySettings)
                     .catch(function(err) {
                         console.warn('[Jellycheck] Could not load plugin config:', err);
                     });
+            }
+
+            function applySettings(cfg) {
+                if (!cfg) return;
+                setVal('jc-EnableAutoDelete',          cfg.EnableAutoDelete);
+                setVal('jc-DeleteDelayDays',           cfg.DeleteDelayDays);
+                setVal('jc-EnableMovieAutoDelete',     cfg.EnableMovieAutoDelete);
+                setVal('jc-MovieDeleteDelayDays',      cfg.MovieDeleteDelayDays);
+                setVal('jc-SkipIfFavorited',           cfg.SkipIfFavorited);
+                setVal('jc-SonarrUrl',                 cfg.SonarrUrl);
+                setVal('jc-SonarrApiKey',              cfg.SonarrApiKey);
+                setVal('jc-RadarrUrl',                 cfg.RadarrUrl);
+                setVal('jc-RadarrApiKey',              cfg.RadarrApiKey);
+                setVal('jc-OverseerrUrl',              cfg.OverseerrUrl);
+                setVal('jc-OverseerrApiKey',           cfg.OverseerrApiKey);
+                setVal('jc-ShowStorageOnHomePage',     cfg.ShowStorageOnHomePage !== false);
+                setVal('jc-NotifyUsersBeforeDeletion', cfg.NotifyUsersBeforeDeletion);
+                setVal('jc-NotifyDaysBeforeDeletion',  cfg.NotifyDaysBeforeDeletion);
             }
 
             function saveSettings() {
@@ -819,8 +854,29 @@
                     NotifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3
                 };
 
-                var headers = Object.assign({ 'Content-Type': 'application/json' }, getAuthHeaders());
+                function onSuccess() {
+                    var el = document.getElementById('jc-save-status');
+                    if (el) {
+                        el.classList.add('visible');
+                        setTimeout(function() { el.classList.remove('visible'); }, 3000);
+                    }
+                    loadStorageInfo(true);
+                }
 
+                if (window.ApiClient && typeof window.ApiClient.updatePluginConfiguration === 'function') {
+                    window.ApiClient.updatePluginConfiguration(PLUGIN_ID, cfg).then(function() {
+                        onSuccess();
+                    }).catch(function(err) {
+                        console.warn('[Jellycheck] ApiClient.updatePluginConfiguration failed, trying fetch fallback:', err);
+                        fallbackSaveSettings(cfg, onSuccess);
+                    });
+                } else {
+                    fallbackSaveSettings(cfg, onSuccess);
+                }
+            }
+
+            function fallbackSaveSettings(cfg, onSuccess) {
+                var headers = Object.assign({ 'Content-Type': 'application/json' }, getAuthHeaders());
                 fetch(getConfigUrl(), {
                     method:  'POST',
                     headers: headers,
@@ -828,12 +884,7 @@
                 })
                 .then(function(r) {
                     if (r.ok) {
-                        var el = document.getElementById('jc-save-status');
-                        if (el) {
-                            el.classList.add('visible');
-                            setTimeout(function() { el.classList.remove('visible'); }, 3000);
-                        }
-                        loadStorageInfo(true);
+                        onSuccess();
                     } else {
                         alert('Failed to save settings (HTTP ' + r.status + '). Check Jellyfin logs.');
                     }

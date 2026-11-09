@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.Jellycheck.Services
 {
     /// <summary>
-    /// Thin HTTP client wrapper for the Radarr v3/v4 API.
+    /// Thin HTTP client wrapper for the Radarr v3/v4/v5 API.
     /// Supports movie lookup, deletion, and disk space inspection.
     /// </summary>
     public class RadarrService
@@ -23,7 +23,9 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             
             var handler = new HttpClientHandler
             {
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+                AllowAutoRedirect = true,
+                MaxAutomaticRedirections = 5
             };
             _http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
         }
@@ -37,45 +39,59 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             {
                 clean = "https://" + clean;
             }
-            return clean;
+            if (clean.EndsWith("/api/v3", StringComparison.OrdinalIgnoreCase))
+            {
+                clean = clean.Substring(0, clean.Length - "/api/v3".Length);
+            }
+            else if (clean.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+            {
+                clean = clean.Substring(0, clean.Length - "/api".Length);
+            }
+            return clean.TrimEnd('/');
         }
 
         // ── Disk space ────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Retrieves the disk space list from Radarr /api/v3/diskspace or /api/v3/rootfolder.
-        /// Returns null if Radarr is unreachable.
+        /// Retrieves the disk space list from Radarr with diagnostic log information.
         /// </summary>
-        public async Task<List<DiskSpaceItem>?> GetDiskSpaceAsync(string baseUrl, string apiKey)
+        public async Task<(List<DiskSpaceItem>? Disks, string Log)> GetDiskSpaceWithLogAsync(string baseUrl, string apiKey)
         {
-            if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
-                return null;
+            var cleanBase = NormalizeBaseUrl(baseUrl);
+            if (string.IsNullOrEmpty(cleanBase))
+                return (null, "Radarr URL is empty or invalid.");
+
+            var cleanKey = (apiKey ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(cleanKey))
+                return (null, "Radarr API key is empty.");
 
             // 1. Try /api/v3/diskspace
-            var disks = await FetchDisksFromEndpointAsync(baseUrl, apiKey, "api/v3/diskspace").ConfigureAwait(false);
+            var (disks, log1) = await FetchDisksWithLogAsync(cleanBase, cleanKey, "api/v3/diskspace").ConfigureAwait(false);
             if (disks != null && disks.Count > 0)
             {
-                return disks;
+                return (disks, $"Radarr /api/v3/diskspace OK: {disks.Count} disk(s) found.");
             }
 
-            // 2. Fallback to /api/v3/rootfolder (reliable on seedboxes like Ultra.cc where media roots have quotas)
-            var rootFolders = await FetchDisksFromEndpointAsync(baseUrl, apiKey, "api/v3/rootfolder").ConfigureAwait(false);
-            if (rootFolders != null && rootFolders.Count > 0)
+            // 2. Fallback to /api/v3/rootfolder (reliable on seedboxes like Ultra.cc)
+            var (rootDisks, log2) = await FetchDisksWithLogAsync(cleanBase, cleanKey, "api/v3/rootfolder").ConfigureAwait(false);
+            if (rootDisks != null && rootDisks.Count > 0)
             {
-                return rootFolders;
+                return (rootDisks, $"Radarr /api/v3/rootfolder OK: {rootDisks.Count} folder(s) found.");
             }
 
-            return null;
+            return (null, $"Radarr query failed. /diskspace: [{log1}], /rootfolder: [{log2}]");
         }
 
-        private async Task<List<DiskSpaceItem>?> FetchDisksFromEndpointAsync(string baseUrl, string apiKey, string endpoint)
+        public async Task<List<DiskSpaceItem>?> GetDiskSpaceAsync(string baseUrl, string apiKey)
+        {
+            var (disks, _) = await GetDiskSpaceWithLogAsync(baseUrl, apiKey).ConfigureAwait(false);
+            return disks;
+        }
+
+        private async Task<(List<DiskSpaceItem>? Disks, string Log)> FetchDisksWithLogAsync(string cleanBase, string cleanKey, string endpoint)
         {
             try
             {
-                var cleanBase = NormalizeBaseUrl(baseUrl);
-                if (string.IsNullOrEmpty(cleanBase)) return null;
-
-                var cleanKey = apiKey.Trim();
                 var sep = endpoint.Contains('?') ? '&' : '?';
                 var url = $"{cleanBase}/{endpoint}{sep}apikey={Uri.EscapeDataString(cleanKey)}";
 
@@ -86,8 +102,10 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 using var resp = await _http.SendAsync(req).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    _logger?.LogWarning("[Jellycheck/Radarr] GET {Endpoint} returned {Status}", endpoint, resp.StatusCode);
-                    return null;
+                    var body = string.Empty;
+                    try { body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false); } catch { }
+                    var shortBody = body.Length > 80 ? body.Substring(0, 80) + "..." : body;
+                    return (null, $"HTTP {(int)resp.StatusCode} {resp.StatusCode} ({shortBody})");
                 }
 
                 var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -116,12 +134,15 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     }
                 }
 
-                return list.Count > 0 ? list : null;
+                if (list.Count > 0)
+                {
+                    return (list, $"OK ({list.Count} items)");
+                }
+                return (null, "Valid JSON received but no disks with TotalSpace > 0");
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "[Jellycheck/Radarr] Error querying {Endpoint} from Radarr", endpoint);
-                return null;
+                return (null, $"Connection error: {ex.Message}");
             }
         }
 
