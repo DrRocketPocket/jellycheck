@@ -12,7 +12,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.11.zip",
-        "checksum": "49063ac97200b7b2fc565af3a9cdefe5",
+        "checksum": "be6cc491b2c13337c5d8c25094c881c0",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "9dd3ff310ec3e0fbb115108483fec7b5",
+        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "9dd3ff310ec3e0fbb115108483fec7b5",
+        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "9dd3ff310ec3e0fbb115108483fec7b5",
+        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "9dd3ff310ec3e0fbb115108483fec7b5",
+        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
         "timestamp": "2026-11-12 11:00:00"
       }
     ]
