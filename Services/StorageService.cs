@@ -45,6 +45,10 @@ namespace Jellyfin.Plugin.Jellycheck.Services
         public string UsedSpaceFormatted { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public string? Message { get; set; }
+        public long LibrarySpace { get; set; }
+        public string LibrarySpaceFormatted { get; set; } = string.Empty;
+        public double StoragePlanSizeGB { get; set; }
+        public double StorageUsedOutsideLibraryGB { get; set; }
         public List<string> Diagnostics { get; set; } = new();
         public List<DiskInfoDto> Disks { get; set; } = new();
     }
@@ -112,6 +116,10 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 Note($"Detected environment user: '{slotUser}'.");
             }
 
+            // Always measure library usage so the settings UI and diagnostics can show the exact media size
+            var libraryUsage = TryGetLibraryUsage();
+            Note($"Library scan: {libraryUsage.ItemCount} items, {libraryUsage.ItemsWithSize} with recorded sizes, {FormatBytes(libraryUsage.TotalBytes)} total ({libraryUsage.Method}).");
+
             // ── Tier 1: Ultra.cc / Linux System Quota (quota -s) ───────────────
             // On seedboxes like Ultra.cc, Linux user quota gives the exact account plan limit
             // (e.g. 136 GB free of 6,000 GB), whereas Radarr only sees the physical 14.5 TB shared array.
@@ -121,50 +129,45 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             if (qDisk != null && qDisk.TotalSpace > 0)
             {
                 quotaDisk = qDisk;
-                primarySource = "Ultra.cc Storage Quota";
-                allDisks.Add(quotaDisk);
+                if (config.StoragePlanSizeGB <= 0)
+                {
+                    primarySource = "Ultra.cc Storage Quota";
+                    allDisks.Add(quotaDisk);
+                }
             }
 
             // ── Tier 1.5: Plan-based estimate from library media sizes ─────────
             // Works on any server: user enters their plan size (e.g. 6000 GB) and we
-            // subtract the summed size of every movie/episode file in the library.
-            // Less exact than quota (non-library files are not counted), but has no
-            // external dependencies. Opt-in: only runs when StoragePlanSizeGB > 0.
+            // subtract the summed size of every movie/episode file in the library and
+            // any outside usage. If StoragePlanSizeGB > 0 is configured by user, it
+            // takes precedence so user settings always apply as expected.
             DiskSpaceItem? planDisk = null;
-            if (quotaDisk == null && config.StoragePlanSizeGB > 0)
+            if (config.StoragePlanSizeGB > 0)
             {
-                Note($"Plan size setting: {config.StoragePlanSizeGB} GB.");
+                Note($"Plan size setting: {config.StoragePlanSizeGB} GB, outside library: {config.StorageUsedOutsideLibraryGB} GB.");
                 if (_libraryManager == null)
                 {
                     Note("LibraryManager is NOT available to the storage service — cannot measure library usage.");
                 }
-                var usage = TryGetLibraryUsage();
-                if (usage.TotalBytes > 0)
+                long libraryBytes = Math.Max(0, libraryUsage.TotalBytes);
+                long planTotal = (long)(config.StoragePlanSizeGB * 1024L * 1024L * 1024L);
+                long outsideUsed = (long)(config.StorageUsedOutsideLibraryGB * 1024L * 1024L * 1024L);
+                long planFree = Math.Max(0, planTotal - libraryBytes - outsideUsed);
+                planDisk = new DiskSpaceItem
                 {
-                    long planTotal = (long)(config.StoragePlanSizeGB * 1024L * 1024L * 1024L);
-                    long outsideUsed = (long)(config.StorageUsedOutsideLibraryGB * 1024L * 1024L * 1024L);
-                    long planFree = Math.Max(0, planTotal - usage.TotalBytes - outsideUsed);
-                    planDisk = new DiskSpaceItem
-                    {
-                        Path = "Media Library",
-                        Label = "Library vs " + FormatBytes(planTotal) + " plan",
-                        TotalSpace = planTotal,
-                        FreeSpace = planFree
-                    };
-                    primarySource = "Library Estimate (Plan)";
-                    allDisks.Add(planDisk);
-                    Note($"Plan-based estimate: {usage.ItemCount} media items use {FormatBytes(usage.TotalBytes)} of a {FormatBytes(planTotal)} plan" +
-                         (outsideUsed > 0 ? $" plus {FormatBytes(outsideUsed)} outside the library" : "") +
-                         $" → {FormatBytes(planFree)} free ({usage.Method}).");
-                    if (usage.IsStrmLike)
-                    {
-                        Note("WARNING: item sizes look like .strm placeholder files. If your media is streamed (debrid/cloud), local sizes cannot reflect it — compare with your slot's disk usage panel.");
-                    }
-                }
-                else
+                    Path = "Media Library",
+                    Label = "Library vs " + FormatBytes(planTotal) + " plan",
+                    TotalSpace = planTotal,
+                    FreeSpace = planFree
+                };
+                primarySource = "Library Estimate (Plan)";
+                allDisks.Add(planDisk);
+                Note($"Plan-based estimate: {libraryUsage.ItemCount} media items use {FormatBytes(libraryBytes)} of a {FormatBytes(planTotal)} plan" +
+                     (outsideUsed > 0 ? $" plus {FormatBytes(outsideUsed)} outside the library" : "") +
+                     $" → {FormatBytes(planFree)} free ({libraryUsage.Method}).");
+                if (libraryUsage.IsStrmLike)
                 {
-                    Note($"Plan size is configured but no usable media sizes were found ({usage.ItemCount} items scanned, {usage.ItemsWithSize} had recorded sizes).");
-                    LogLibraryFolderState(Note);
+                    Note("WARNING: item sizes look like .strm placeholder files. If your media is streamed (debrid/cloud), local sizes cannot reflect it — compare with your slot's disk usage panel.");
                 }
             }
 
@@ -356,19 +359,18 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             long totalSpace = 0;
             long freeSpace = 0;
 
-            // If Ultra.cc system quota was detected, use it as the definitive total and free space
-            // so that user account limits (e.g. 136 GB free / 6000 GB) are shown instead of the physical host disk
-            if (quotaDisk != null && quotaDisk.TotalSpace > 0)
-            {
-                totalSpace = quotaDisk.TotalSpace;
-                freeSpace = quotaDisk.FreeSpace;
-                primarySource = "Ultra.cc Storage Quota";
-            }
-            else if (planDisk != null && planDisk.TotalSpace > 0)
+            // Explicit user plan configuration takes highest priority when set
+            if (planDisk != null && planDisk.TotalSpace > 0)
             {
                 totalSpace = planDisk.TotalSpace;
                 freeSpace = planDisk.FreeSpace;
                 primarySource = "Library Estimate (Plan)";
+            }
+            else if (quotaDisk != null && quotaDisk.TotalSpace > 0)
+            {
+                totalSpace = quotaDisk.TotalSpace;
+                freeSpace = quotaDisk.FreeSpace;
+                primarySource = "Ultra.cc Storage Quota";
             }
             else if (allDisks.Count > 0)
             {
@@ -384,7 +386,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 }
                 else
                 {
-                    statusMessage = "Storage details unavailable. Configure Sonarr/Radarr in settings.";
+                    statusMessage = "Storage details unavailable. Configure Storage Plan Size or Sonarr/Radarr in settings.";
                 }
             }
 
@@ -401,6 +403,10 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 TotalSpaceFormatted = FormatBytes(totalSpace),
                 FreeSpaceFormatted = FormatBytes(freeSpace),
                 UsedSpaceFormatted = FormatBytes(usedSpace),
+                LibrarySpace = libraryUsage.TotalBytes,
+                LibrarySpaceFormatted = FormatBytes(libraryUsage.TotalBytes),
+                StoragePlanSizeGB = config.StoragePlanSizeGB,
+                StorageUsedOutsideLibraryGB = config.StorageUsedOutsideLibraryGB,
                 Source = primarySource,
                 Message = statusMessage,
                 Diagnostics = diag,

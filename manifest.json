@@ -8,6 +8,46 @@
     "category": "UI",
     "versions": [
       {
+        "version": "1.0.0.28",
+        "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.11.zip",
+        "checksum": "",
+        "timestamp": "2026-11-12 12:00:00"
+      },
+      {
+        "version": "1.0.0.28",
+        "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
+        "targetAbi": "10.10.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
+        "checksum": "",
+        "timestamp": "2026-11-12 12:00:00"
+      },
+      {
+        "version": "1.0.0.28",
+        "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
+        "targetAbi": "10.9.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
+        "checksum": "",
+        "timestamp": "2026-11-12 12:00:00"
+      },
+      {
+        "version": "1.0.0.28",
+        "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
+        "targetAbi": "10.8.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
+        "checksum": "",
+        "timestamp": "2026-11-12 12:00:00"
+      },
+      {
+        "version": "1.0.0.28",
+        "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
+        "targetAbi": "10.7.0.0",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
+        "checksum": "",
+        "timestamp": "2026-11-12 12:00:00"
+      },
+      {
         "version": "1.0.0.27",
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.11.0.0",

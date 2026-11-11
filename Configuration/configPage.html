@@ -353,7 +353,7 @@
                 <h1 class="jellycheck-title">Jellycheck</h1>
                 <div class="jellycheck-subtitle">Watched status avatars & storage monitor plugin</div>
             </div>
-            <span class="jellycheck-badge" id="jellycheck-version-badge">v1.0.0.21</span>
+            <span class="jellycheck-badge" id="jellycheck-version-badge">v1.0.0.28</span>
         </div>
 
         <!-- Active notice -->
@@ -615,20 +615,34 @@
             <div class="jc-field-row">
                 <div class="jc-field-label">
                     <strong>Storage Plan Size (GB)</strong>
-                    <small>Fallback when quota / Sonarr / Radarr are unavailable: your slot's total storage in GB (e.g. 6000 for a 6&nbsp;TB plan). Remaining space is estimated as plan size minus the size of all movies and episodes in your library. Leave empty to disable. Non-library files are not counted.</small>
+                    <small>Your slot or server plan limit in GB (e.g. 6000 for a 6&nbsp;TB plan). When set, this takes priority so remaining space is estimated as: <em>Plan Size − Library Media − Outside Usage</em>. Leave empty to disable.</small>
+                    <div style="margin-top:6px;font-size:0.85rem;color:#a0a0b0;">
+                        Media in Jellyfin library: <strong id="jc-library-size-badge" style="color:#00f2fe;">Calculating...</strong>
+                    </div>
                 </div>
                 <div class="jc-field-input">
-                    <input type="number" id="jc-StoragePlanSizeGB" min="0" step="1" placeholder="e.g. 6000" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e0e0e0;padding:8px 12px;width:140px;">
+                    <input type="number" id="jc-StoragePlanSizeGB" min="0" step="any" placeholder="e.g. 6000" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e0e0e0;padding:8px 12px;width:140px;">
+                </div>
+            </div>
+
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Current Free Storage on Slot (GB)</strong>
+                    <small>Type what storage is left right now from your seedbox or provider panel (e.g. 56 GB). Jellycheck calculates the outside library usage for you automatically. As your Jellyfin library grows with new content in the future, the remaining space adjusts itself automatically.</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="number" id="jc-StorageLeftGB" min="0" step="any" placeholder="e.g. 56" style="background:#1a1a2e;border:1px solid rgba(0,242,254,0.35);border-radius:6px;color:#00f2fe;font-weight:700;padding:8px 12px;width:140px;">
                 </div>
             </div>
 
             <div class="jc-field-row">
                 <div class="jc-field-label">
                     <strong>Used Outside Library (GB)</strong>
-                    <small>Space taken by files Jellyfin cannot see: seeding torrents, active downloads, app data and other slot files. Check your provider's disk usage panel — set this so the storage bar matches the panel's free space. Example: panel shows 6&nbsp;TB total, 4.3&nbsp;TB in Jellyfin, 56&nbsp;GB free → enter about 1650.</small>
+                    <small>Space taken by files Jellyfin cannot see: seeding torrents, active downloads, app data. Auto-calculated when you enter remaining space above, or enter it manually.</small>
+                    <div id="jc-storage-calc-preview" style="margin-top:6px;font-size:0.85rem;color:#00e676;display:none;"></div>
                 </div>
                 <div class="jc-field-input">
-                    <input type="number" id="jc-StorageUsedOutsideLibraryGB" min="0" step="1" placeholder="e.g. 1650" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e0e0e0;padding:8px 12px;width:140px;">
+                    <input type="number" id="jc-StorageUsedOutsideLibraryGB" min="0" step="any" placeholder="e.g. 1650" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e0e0e0;padding:8px 12px;width:140px;">
                 </div>
             </div>
 
@@ -762,6 +776,15 @@
                     var barEl = document.getElementById('jc-storage-bar-val');
                     var diagEl = document.getElementById('jc-storage-diag');
 
+                    if (data && (data.librarySpace !== undefined || data.librarySpaceFormatted)) {
+                        detectedLibraryBytes = data.librarySpace || 0;
+                        var libEl = document.getElementById('jc-library-size-badge');
+                        if (libEl) {
+                            libEl.innerText = data.librarySpaceFormatted || (Math.round((detectedLibraryBytes / (1024 * 1024 * 1024)) * 10) / 10 + ' GB');
+                        }
+                        updateStorageCalcSync('data');
+                    }
+
                     if (diagEl) {
                         if (data && data.diagnostics && data.diagnostics.length > 0) {
                             diagEl.textContent = data.diagnostics.join('\n');
@@ -880,6 +903,69 @@
                     });
             }
 
+            var detectedLibraryBytes = 0;
+
+            function updateStorageCalcSync(source) {
+                var planEl = document.getElementById('jc-StoragePlanSizeGB');
+                var leftEl = document.getElementById('jc-StorageLeftGB');
+                var outsideEl = document.getElementById('jc-StorageUsedOutsideLibraryGB');
+                var previewEl = document.getElementById('jc-storage-calc-preview');
+                if (!planEl || !leftEl || !outsideEl) return;
+
+                var plan = parseFloat(planEl.value) || 0;
+                var libGB = detectedLibraryBytes > 0 ? (detectedLibraryBytes / (1024 * 1024 * 1024)) : 0;
+                libGB = Math.round(libGB * 10) / 10;
+
+                if (source === 'left') {
+                    var freeLeft = parseFloat(leftEl.value);
+                    if (!isNaN(freeLeft) && plan > 0) {
+                        var outside = Math.max(0, Math.round((plan - libGB - freeLeft) * 10) / 10);
+                        outsideEl.value = outside;
+                        updateCalcPreview(plan, libGB, outside, freeLeft);
+                    } else if (leftEl.value === '') {
+                        if (previewEl) previewEl.style.display = 'none';
+                    }
+                } else if (source === 'outside') {
+                    var outside = parseFloat(outsideEl.value);
+                    if (!isNaN(outside) && plan > 0) {
+                        var freeLeft = Math.max(0, Math.round((plan - libGB - outside) * 10) / 10);
+                        leftEl.value = freeLeft;
+                        updateCalcPreview(plan, libGB, outside, freeLeft);
+                    } else if (outsideEl.value === '') {
+                        if (previewEl) previewEl.style.display = 'none';
+                    }
+                } else if (source === 'plan') {
+                    if (leftEl.value !== '') {
+                        updateStorageCalcSync('left');
+                    } else if (outsideEl.value !== '') {
+                        updateStorageCalcSync('outside');
+                    }
+                } else if (source === 'load' || source === 'data') {
+                    if (outsideEl.value !== '' && plan > 0) {
+                        var outside = parseFloat(outsideEl.value) || 0;
+                        var freeLeft = Math.max(0, Math.round((plan - libGB - outside) * 10) / 10);
+                        if (document.activeElement !== leftEl) {
+                            leftEl.value = freeLeft;
+                        }
+                        updateCalcPreview(plan, libGB, outside, freeLeft);
+                    } else if (leftEl.value !== '' && plan > 0) {
+                        var freeLeft = parseFloat(leftEl.value) || 0;
+                        var outside = Math.max(0, Math.round((plan - libGB - freeLeft) * 10) / 10);
+                        outsideEl.value = outside;
+                        updateCalcPreview(plan, libGB, outside, freeLeft);
+                    }
+                }
+            }
+
+            function updateCalcPreview(plan, libGB, outside, freeLeft) {
+                var previewEl = document.getElementById('jc-storage-calc-preview');
+                if (!previewEl) return;
+                var used = Math.round((libGB + outside) * 10) / 10;
+                var pct = plan > 0 ? Math.round((used / plan) * 1000) / 10 : 0;
+                previewEl.style.display = 'block';
+                previewEl.innerHTML = '✓ Plan: <strong>' + plan + ' GB</strong> − Library: <strong>' + libGB + ' GB</strong> − Outside: <strong>' + outside + ' GB</strong> → Free: <strong>' + freeLeft + ' GB</strong> (' + pct + '% used)';
+            }
+
             function applySettings(cfg) {
                 if (!cfg) return;
                 setVal('jc-EnableAutoDelete',          getProp(cfg, 'EnableAutoDelete'));
@@ -894,10 +980,13 @@
                 setVal('jc-OverseerrUrl',              getProp(cfg, 'OverseerrUrl'));
                 setVal('jc-OverseerrApiKey',           getProp(cfg, 'OverseerrApiKey'));
                 setVal('jc-ShowStorageOnHomePage',     getProp(cfg, 'ShowStorageOnHomePage') !== false);
-                setVal('jc-StoragePlanSizeGB',         getProp(cfg, 'StoragePlanSizeGB') || '');
-                setVal('jc-StorageUsedOutsideLibraryGB', getProp(cfg, 'StorageUsedOutsideLibraryGB') || '');
+                var planVal = getProp(cfg, 'StoragePlanSizeGB');
+                setVal('jc-StoragePlanSizeGB', (planVal !== undefined && planVal !== null && Number(planVal) > 0) ? planVal : '');
+                var outsideVal = getProp(cfg, 'StorageUsedOutsideLibraryGB');
+                setVal('jc-StorageUsedOutsideLibraryGB', (outsideVal !== undefined && outsideVal !== null && outsideVal !== '') ? outsideVal : '');
                 setVal('jc-NotifyUsersBeforeDeletion', getProp(cfg, 'NotifyUsersBeforeDeletion'));
                 setVal('jc-NotifyDaysBeforeDeletion',  getProp(cfg, 'NotifyDaysBeforeDeletion'));
+                updateStorageCalcSync('load');
             }
 
             function saveSettings() {
@@ -928,6 +1017,8 @@
                     showStorageOnHomePage:     getVal('jc-ShowStorageOnHomePage'),
                     StoragePlanSizeGB:         parseFloat(getVal('jc-StoragePlanSizeGB')) || 0,
                     storagePlanSizeGB:         parseFloat(getVal('jc-StoragePlanSizeGB')) || 0,
+                    StorageUsedOutsideLibraryGB: parseFloat(getVal('jc-StorageUsedOutsideLibraryGB')) || 0,
+                    storageUsedOutsideLibraryGB: parseFloat(getVal('jc-StorageUsedOutsideLibraryGB')) || 0,
                     NotifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
                     notifyUsersBeforeDeletion: getVal('jc-NotifyUsersBeforeDeletion'),
                     NotifyDaysBeforeDeletion:  parseInt(getVal('jc-NotifyDaysBeforeDeletion'), 10) || 3,
@@ -1026,6 +1117,19 @@
                     e.preventDefault();
                     saveSettings();
                 });
+
+                var planInput = document.getElementById('jc-StoragePlanSizeGB');
+                if (planInput) {
+                    planInput.addEventListener('input', function () { updateStorageCalcSync('plan'); });
+                }
+                var leftInput = document.getElementById('jc-StorageLeftGB');
+                if (leftInput) {
+                    leftInput.addEventListener('input', function () { updateStorageCalcSync('left'); });
+                }
+                var outsideInput = document.getElementById('jc-StorageUsedOutsideLibraryGB');
+                if (outsideInput) {
+                    outsideInput.addEventListener('input', function () { updateStorageCalcSync('outside'); });
+                }
 
                 injectScript();
                 loadSettings();

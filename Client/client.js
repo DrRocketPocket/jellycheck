@@ -265,28 +265,55 @@
         return lower;
     }
 
+    function getAuthToken() {
+        if (!window.ApiClient) return '';
+        if (typeof window.ApiClient.accessToken === 'function') {
+            const t = window.ApiClient.accessToken();
+            if (t) return t;
+        }
+        if (window.ApiClient._token) return window.ApiClient._token;
+        if (window.ApiClient._serverInfo && window.ApiClient._serverInfo.AccessToken) {
+            return window.ApiClient._serverInfo.AccessToken;
+        }
+        return '';
+    }
+
     async function fetchStorageData(force = false) {
         if (isFetchingStorage) return;
-        if (!force && Date.now() - lastStorageFetch < 60000 && storageData) {
+        if (!force && Date.now() - lastStorageFetch < 30000 && storageData && storageData.totalSpace > 0) {
             updateStorageBar();
             return;
         }
         isFetchingStorage = true;
         try {
-            // Cache-buster: proxies/browsers may otherwise serve a stale failure forever
-            const url = getApiUrl('jellycheck/storage') + '?_=' + Date.now();
-            let data;
+            const endpoint = 'jellycheck/storage' + (force ? '?refresh=true' : '');
+            let data = null;
+
+            // 1. Try ApiClient.getJSON
             if (window.ApiClient && typeof window.ApiClient.getJSON === 'function') {
-                data = await window.ApiClient.getJSON(url);
-            } else {
-                const token = window.ApiClient && typeof window.ApiClient.accessToken === 'function' ? window.ApiClient.accessToken() : '';
+                try {
+                    const apiUrl = typeof window.ApiClient.getUrl === 'function'
+                        ? window.ApiClient.getUrl(endpoint)
+                        : getApiUrl(endpoint);
+                    data = await window.ApiClient.getJSON(apiUrl);
+                } catch (e) {
+                    // Fall back to fetch below
+                }
+            }
+
+            // 2. Fallback direct fetch with auth headers
+            if (!data) {
+                const token = getAuthToken();
                 const headers = { 'Accept': 'application/json' };
                 if (token) {
                     headers['Authorization'] = `MediaBrowser Client="Jellycheck", Device="Web", DeviceId="JellycheckWeb", Version="1.0.0", Token="${token}"`;
                     headers['X-Emby-Token'] = token;
                     headers['X-MediaBrowser-Token'] = token;
                 }
-                const response = await fetch(url, { headers });
+                const fetchUrl = (window.ApiClient && typeof window.ApiClient.getUrl === 'function')
+                    ? window.ApiClient.getUrl(endpoint)
+                    : getApiUrl(endpoint);
+                const response = await fetch(fetchUrl, { headers });
                 if (response.ok) {
                     data = await response.json();
                 }
@@ -305,11 +332,28 @@
     }
 
     function getHomeSectionsContainer() {
-        // Active (visible) home container
+        // 1. Visible home page container with .homeSectionsContainer (10.7 - 10.9)
         const activeContainer = document.querySelector('.page:not(.hide) .homeSectionsContainer');
         if (activeContainer) return activeContainer;
 
-        const anyContainer = document.querySelector('.homeSectionsContainer');
+        // 2. Visible home page with sections tab (10.10, 10.11+)
+        const activePage = document.querySelector('.page:not(.hide).homePage, .page:not(.hide)#indexPage, .homePage:not(.hide), #indexPage:not(.hide)');
+        if (activePage) {
+            const inner = activePage.querySelector('.homeSectionsContainer')
+                || activePage.querySelector('#homeTab .sections')
+                || activePage.querySelector('#homeTab')
+                || activePage.querySelector('.sections')
+                || activePage.querySelector('.pageTabContent:not(.hide)')
+                || activePage.querySelector('.contentScrollSlider')
+                || activePage;
+            if (inner) return inner;
+        }
+
+        // 3. Fallback: any visible home sections container
+        const anyContainer = document.querySelector('.homeSectionsContainer')
+            || document.querySelector('#homeTab .sections')
+            || document.querySelector('#indexPage .sections')
+            || document.querySelector('.homePage .sections');
         if (anyContainer) {
             const page = anyContainer.closest('.page');
             if (!page || !page.classList.contains('hide')) {
@@ -335,15 +379,6 @@
             return;
         }
 
-        // Check if existing bar is already attached inside the correct container
-        if (existing && existing.parentElement === homeSections) {
-            return; // Up-to-date and in place
-        }
-
-        if (existing) {
-            existing.remove();
-        }
-
         const hasSpaceData = storageData.totalSpace && storageData.totalSpace > 0;
         const pct = hasSpaceData && typeof storageData.percentUsed === 'number' ? storageData.percentUsed : 0;
         let barClass = '';
@@ -367,9 +402,17 @@
                <span class="jellycheck-storage-pct">(${pct}% used)</span>`
             : `<span style="font-size:0.8rem;color:#94a3b8">${storageData.message || 'Storage details loading...'}</span>`;
 
+        const currentDataFp = `${storageData.freeSpace}:${storageData.totalSpace}:${pct}:${storageData.message}`;
+
+        // If existing bar is already attached inside the correct container and matches current data, nothing to do
+        if (existing && existing.parentElement === homeSections && existing.getAttribute('data-jc-fp') === currentDataFp) {
+            return;
+        }
+
         const wrapper = document.createElement('div');
         wrapper.id = 'jellycheck-storage-wrapper';
         wrapper.className = 'jellycheck-storage-wrapper';
+        wrapper.setAttribute('data-jc-fp', currentDataFp);
         wrapper.innerHTML = `
             <div class="jellycheck-storage-card" title="${tooltipDetails}">
                 <div class="jellycheck-storage-header">
@@ -389,7 +432,12 @@
             </div>
         `;
 
-        homeSections.prepend(wrapper);
+        if (existing && existing.parentElement === homeSections) {
+            existing.replaceWith(wrapper);
+        } else {
+            if (existing) existing.remove();
+            homeSections.prepend(wrapper);
+        }
     }
 
     function getGradientForUser(username) {
@@ -501,8 +549,9 @@
                         node.querySelector && node.querySelector('.cardBox')) {
                         hasNewCards = true;
                     }
-                    if (node.classList && node.classList.contains('homeSectionsContainer') ||
-                        node.querySelector && node.querySelector('.homeSectionsContainer')) {
+                    if ((node.classList && (node.classList.contains('homeSectionsContainer') || node.classList.contains('sections') || node.classList.contains('homePage'))) ||
+                        node.id === 'homeTab' || node.id === 'indexPage' ||
+                        (node.querySelector && node.querySelector('.homeSectionsContainer, .sections, #homeTab, .homePage, #indexPage'))) {
                         homeChanged = true;
                     }
                 }
