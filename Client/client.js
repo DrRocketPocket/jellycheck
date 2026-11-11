@@ -214,7 +214,7 @@
         if (isFetching) return;
         isFetching = true;
         try {
-            const url = getApiUrl('jellycheck/watched');
+            const url = getApiUrl('jellycheck/watched') + '?_=' + Date.now();
             let data;
             if (window.ApiClient && typeof window.ApiClient.getJSON === 'function') {
                 data = await window.ApiClient.getJSON(url);
@@ -256,7 +256,8 @@
         }
         isFetchingStorage = true;
         try {
-            const url = getApiUrl('jellycheck/storage');
+            // Cache-buster: proxies/browsers may otherwise serve a stale failure forever
+            const url = getApiUrl('jellycheck/storage') + '?_=' + Date.now();
             let data;
             if (window.ApiClient && typeof window.ApiClient.getJSON === 'function') {
                 data = await window.ApiClient.getJSON(url);

@@ -17,6 +17,7 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
 {
     [ApiController]
     [Route("jellycheck")]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
     public class WatchedStatusController : ControllerBase
     {
         private readonly IUserManager _userManager;

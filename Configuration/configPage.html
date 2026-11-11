@@ -734,6 +734,7 @@
 
             function loadStorageInfo(forceRefresh) {
                 var endpoint = 'jellycheck/storage' + (forceRefresh ? '?refresh=true' : '');
+                endpoint += (endpoint.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
                 var freeEl = document.getElementById('jc-storage-free-val');
                 if (freeEl && forceRefresh) freeEl.innerText = 'Checking...';
 
