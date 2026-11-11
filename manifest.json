@@ -8,44 +8,44 @@
     "category": "UI",
     "versions": [
       {
-        "version": "1.0.0.25",
-        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
+        "version": "1.0.0.26",
+        "changelog": "Removed routine storage logging (no log output during normal operation; errors still log). Diagnostics remain available in the Check Storage panel.",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.26/Jellycheck-10.11.zip",
         "checksum": "d9320a504d153e0aec74f905a98d71b1",
-        "timestamp": "2026-11-12 09:30:00"
+        "timestamp": "2026-11-12 10:00:00"
       },
       {
-        "version": "1.0.0.25",
-        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
+        "version": "1.0.0.26",
+        "changelog": "Removed routine storage logging (no log output during normal operation; errors still log). Diagnostics remain available in the Check Storage panel.",
         "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.26/Jellycheck-10.8.zip",
         "checksum": "2f45f9e12c600325589296befda82aac",
-        "timestamp": "2026-11-12 09:30:00"
+        "timestamp": "2026-11-12 10:00:00"
       },
       {
-        "version": "1.0.0.25",
-        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
+        "version": "1.0.0.26",
+        "changelog": "Removed routine storage logging (no log output during normal operation; errors still log). Diagnostics remain available in the Check Storage panel.",
         "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.26/Jellycheck-10.8.zip",
         "checksum": "2f45f9e12c600325589296befda82aac",
-        "timestamp": "2026-11-12 09:30:00"
+        "timestamp": "2026-11-12 10:00:00"
       },
       {
-        "version": "1.0.0.25",
-        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
+        "version": "1.0.0.26",
+        "changelog": "Removed routine storage logging (no log output during normal operation; errors still log). Diagnostics remain available in the Check Storage panel.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.26/Jellycheck-10.8.zip",
         "checksum": "2f45f9e12c600325589296befda82aac",
-        "timestamp": "2026-11-12 09:30:00"
+        "timestamp": "2026-11-12 10:00:00"
       },
       {
-        "version": "1.0.0.25",
-        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
+        "version": "1.0.0.26",
+        "changelog": "Removed routine storage logging (no log output during normal operation; errors still log). Diagnostics remain available in the Check Storage panel.",
         "targetAbi": "10.7.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.26/Jellycheck-10.8.zip",
         "checksum": "2f45f9e12c600325589296befda82aac",
-        "timestamp": "2026-11-12 09:30:00"
+        "timestamp": "2026-11-12 10:00:00"
       }
     ]
   }

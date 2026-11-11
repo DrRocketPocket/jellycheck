@@ -83,7 +83,6 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 {
                     if (_cachedStorage != null && DateTime.UtcNow < _cacheExpires)
                     {
-                        _logger?.LogInformation("[Jellycheck/Storage] Serving cached result (source={Source}).", _cachedStorage.Source);
                         return _cachedStorage;
                     }
                 }
@@ -95,12 +94,11 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             string primarySource = "None";
             string statusMessage = string.Empty;
 
-            // Diagnostic trace — every line goes to the Jellyfin log with the
-            // [Jellycheck/Storage] prefix so support can follow one check end-to-end.
+            // Diagnostic detail for the Check Storage panel; nothing is written
+            // to the server log during normal operation (errors still log).
             void Note(string msg)
             {
                 diag.Add(msg);
-                _logger?.LogInformation("[Jellycheck/Storage] {Msg}", msg);
             }
 
             var asmVersion = typeof(StorageService).Assembly.GetName().Version?.ToString() ?? "?";
@@ -543,11 +541,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     {
                         foreach (var loc in vf.Locations)
                         {
-                            if (string.IsNullOrEmpty(loc) || !Directory.Exists(loc))
-                            {
-                                _logger?.LogInformation("[Jellycheck/Storage] Disk scan skipped '{Loc}' (missing or inaccessible).", loc);
-                                continue;
-                            }
+                            if (string.IsNullOrEmpty(loc) || !Directory.Exists(loc)) continue;
                             long locTotal = 0;
                             int locFiles = 0;
                             var dir = new DirectoryInfo(loc);
@@ -558,7 +552,6 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                                 locTotal += fi.Length;
                                 locFiles++;
                             }
-                            _logger?.LogInformation("[Jellycheck/Storage] Disk scan '{Loc}': {Files} files, {Size}.", loc, locFiles, FormatBytes(locTotal));
                         }
                     }
                 }
