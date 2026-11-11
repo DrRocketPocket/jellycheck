@@ -121,11 +121,12 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             DiskSpaceItem? planDisk = null;
             if (quotaDisk == null && config.StoragePlanSizeGB > 0)
             {
-                var (mediaBytes, itemCount) = TryGetLibraryUsage();
-                if (mediaBytes > 0)
+                diag.Add($"Plan size setting: {config.StoragePlanSizeGB} GB.");
+                var usage = TryGetLibraryUsage();
+                if (usage.TotalBytes > 0)
                 {
                     long planTotal = (long)(config.StoragePlanSizeGB * 1024L * 1024L * 1024L);
-                    long planFree = Math.Max(0, planTotal - mediaBytes);
+                    long planFree = Math.Max(0, planTotal - usage.TotalBytes);
                     planDisk = new DiskSpaceItem
                     {
                         Path = "Media Library",
@@ -135,11 +136,15 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     };
                     primarySource = "Library Estimate (Plan)";
                     allDisks.Add(planDisk);
-                    diag.Add($"Plan-based estimate: {itemCount} media files use {FormatBytes(mediaBytes)} of a {FormatBytes(planTotal)} plan → {FormatBytes(planFree)} free. Non-library files are not counted.");
+                    diag.Add($"Plan-based estimate: {usage.ItemCount} media items use {FormatBytes(usage.TotalBytes)} of a {FormatBytes(planTotal)} plan → {FormatBytes(planFree)} free ({usage.Method}). Non-library files are not counted.");
+                    if (usage.IsStrmLike)
+                    {
+                        diag.Add("WARNING: item sizes look like .strm placeholder files. If your media is streamed (debrid/cloud), local sizes cannot reflect it — compare with your slot's disk usage panel.");
+                    }
                 }
                 else
                 {
-                    diag.Add("Plan size is configured but no media file sizes were found in the library yet.");
+                    diag.Add($"Plan size is configured but no usable media sizes were found ({usage.ItemCount} items scanned, {usage.ItemsWithSize} had recorded sizes).");
                 }
             }
 
@@ -407,41 +412,105 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             return result;
         }
 
-        /// <summary>
-        /// Sums the file sizes of all movies and episodes in the library.
-        /// Used for the plan-based storage estimate (Tier 1.5).
-        /// </summary>
-        private (long TotalBytes, int ItemCount) TryGetLibraryUsage()
+        /// <summary>Result of the library usage scan used for the plan-based estimate.</summary>
+        private sealed class LibraryUsage
         {
-            if (_libraryManager == null) return (0, 0);
+            public long TotalBytes;
+            public int ItemCount;
+            public int ItemsWithSize;
+            public string Method = "none";
+            public bool IsStrmLike;
+        }
 
-            try
+        /// <summary>
+        /// Measures how much space the library's media occupies.
+        /// Primary: sum of recorded Movie/Episode file sizes (fast, from the database).
+        /// Fallback: walk the library folder locations on disk and sum real file bytes —
+        /// needed when items have no recorded sizes (e.g. some .strm/debrid libraries).
+        /// </summary>
+        private LibraryUsage TryGetLibraryUsage()
+        {
+            var usage = new LibraryUsage();
+
+            // 1. Recorded item sizes
+            if (_libraryManager != null)
             {
-                var query = new MediaBrowser.Controller.Entities.InternalItemsQuery
+                try
                 {
-                    Recursive = true,
-                    IncludeItemTypes = new[] { Jellyfin.Data.Enums.BaseItemKind.Movie, Jellyfin.Data.Enums.BaseItemKind.Episode }
-                };
-
-                var items = _libraryManager.GetItemList(query);
-                long total = 0;
-                int count = 0;
-                foreach (var item in items)
-                {
-                    var size = item?.Size;
-                    if (size.HasValue && size.Value > 0)
+                    var query = new MediaBrowser.Controller.Entities.InternalItemsQuery
                     {
-                        total += size.Value;
+                        Recursive = true,
+                        IncludeItemTypes = new[] { Jellyfin.Data.Enums.BaseItemKind.Movie, Jellyfin.Data.Enums.BaseItemKind.Episode }
+                    };
+
+                    var items = _libraryManager.GetItemList(query);
+                    long total = 0;
+                    int count = 0;
+                    int withSize = 0;
+                    foreach (var item in items)
+                    {
+                        if (item == null) continue;
                         count++;
+                        var size = item.Size;
+                        if (size.HasValue && size.Value > 0)
+                        {
+                            total += size.Value;
+                            withSize++;
+                        }
+                    }
+
+                    usage.ItemCount = count;
+                    usage.ItemsWithSize = withSize;
+                    if (total > 0)
+                    {
+                        usage.TotalBytes = total;
+                        usage.Method = "recorded item sizes";
+                        // Every item 'has a size' but together they are implausibly tiny → .strm placeholders
+                        usage.IsStrmLike = count > 0 && withSize == count && total < (long)count * 4096;
+                        return usage;
                     }
                 }
-                return (total, count);
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "[Jellycheck/Storage] Failed to sum library item sizes.");
+                }
+            }
+
+            // 2. Fallback: walk library folders on disk
+            try
+            {
+                long diskTotal = 0;
+                int fileCount = 0;
+                if (_libraryManager != null)
+                {
+                    foreach (var vf in _libraryManager.GetVirtualFolders())
+                    {
+                        foreach (var loc in vf.Locations)
+                        {
+                            if (string.IsNullOrEmpty(loc) || !Directory.Exists(loc)) continue;
+                            var dir = new DirectoryInfo(loc);
+                            foreach (var fi in dir.EnumerateFiles("*", SearchOption.AllDirectories))
+                            {
+                                diskTotal += fi.Length;
+                                fileCount++;
+                            }
+                        }
+                    }
+                }
+
+                if (diskTotal > 0)
+                {
+                    usage.TotalBytes = diskTotal;
+                    usage.Method = $"disk scan of library folders ({fileCount} files)";
+                    usage.IsStrmLike = fileCount > 0 && diskTotal < (long)fileCount * 4096;
+                }
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "[Jellycheck/Storage] Failed to sum library item sizes.");
-                return (0, 0);
+                _logger?.LogWarning(ex, "[Jellycheck/Storage] Disk scan of library folders failed.");
             }
+
+            return usage;
         }
 
         private string? DetectSlotUsername()
