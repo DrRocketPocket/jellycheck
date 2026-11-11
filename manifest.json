@@ -12,7 +12,7 @@
         "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.11.zip",
-        "checksum": "",
+        "checksum": "029b11a335067ed9f23d830fec64d6c2",
         "timestamp": "2026-11-12 12:00:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
-        "checksum": "",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 12:00:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
-        "checksum": "",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 12:00:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
-        "checksum": "",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 12:00:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Fix Used Outside Library setting persistence; fix home storage bar loading and filling across Jellyfin versions; add remaining storage calculator with automatic outside library deduction.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.28/Jellycheck-10.8.zip",
-        "checksum": "",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 12:00:00"
       },
       {
@@ -52,7 +52,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.11.zip",
-        "checksum": "be6cc491b2c13337c5d8c25094c881c0",
+        "checksum": "029b11a335067ed9f23d830fec64d6c2",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -60,7 +60,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -68,7 +68,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -76,7 +76,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 11:00:00"
       },
       {
@@ -84,7 +84,7 @@
         "changelog": "Storage web UI now accepts both camelCase and PascalCase JSON responses \u2014 fixes the bar showing \"Storage details loading...\" and the settings card showing \"Unavailable\" on servers whose serializer emits PascalCase keys.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.27/Jellycheck-10.8.zip",
-        "checksum": "5d7a9fd874d33aba348bc5f77ac0a441",
+        "checksum": "5803be2f03b3a5b9077c59fdaaa57f84",
         "timestamp": "2026-11-12 11:00:00"
       }
     ]
