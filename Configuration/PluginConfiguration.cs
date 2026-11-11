@@ -55,6 +55,14 @@ namespace Jellyfin.Plugin.Jellycheck.Configuration
         /// </summary>
         public double StoragePlanSizeGB { get; set; } = 0;
 
+        /// <summary>
+        /// Space used by files OUTSIDE the Jellyfin library, in GB (seeding torrents,
+        /// downloads in progress, app data, other slot files). The library-only estimate
+        /// cannot see these; set this so free space matches your provider's panel.
+        /// 0 = assume no outside usage.
+        /// </summary>
+        public double StorageUsedOutsideLibraryGB { get; set; } = 0;
+
         // ── Notifications ────────────────────────────────────────────────────
         /// <summary>Send a Jellyfin server notification before content is auto-deleted.</summary>
         public bool NotifyUsersBeforeDeletion { get; set; } = false;

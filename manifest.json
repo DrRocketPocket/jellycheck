@@ -8,44 +8,44 @@
     "category": "UI",
     "versions": [
       {
-        "version": "1.0.0.24",
-        "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
+        "version": "1.0.0.25",
+        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.11.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.11.zip",
         "checksum": "a671e386ba76e990922dd80ce993169c",
-        "timestamp": "2026-11-11 21:00:00"
+        "timestamp": "2026-11-12 09:30:00"
       },
       {
-        "version": "1.0.0.24",
-        "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
+        "version": "1.0.0.25",
+        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
         "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
         "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
-        "timestamp": "2026-11-11 21:00:00"
+        "timestamp": "2026-11-12 09:30:00"
       },
       {
-        "version": "1.0.0.24",
-        "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
+        "version": "1.0.0.25",
+        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
         "targetAbi": "10.9.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
         "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
-        "timestamp": "2026-11-11 21:00:00"
+        "timestamp": "2026-11-12 09:30:00"
       },
       {
-        "version": "1.0.0.24",
-        "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
+        "version": "1.0.0.25",
+        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
         "targetAbi": "10.8.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
         "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
-        "timestamp": "2026-11-11 21:00:00"
+        "timestamp": "2026-11-12 09:30:00"
       },
       {
-        "version": "1.0.0.24",
-        "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
+        "version": "1.0.0.25",
+        "changelog": "New \"Used Outside Library (GB)\" setting for the plan estimate: seeding torrents, active downloads, app data and other non-library files can now be accounted for so the storage bar matches your provider panel. Also shown in the diagnostic trace.",
         "targetAbi": "10.7.0.0",
-        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
+        "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.25/Jellycheck-10.8.zip",
         "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
-        "timestamp": "2026-11-11 21:00:00"
+        "timestamp": "2026-11-12 09:30:00"
       }
     ]
   }

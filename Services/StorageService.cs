@@ -105,6 +105,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
 
             var asmVersion = typeof(StorageService).Assembly.GetName().Version?.ToString() ?? "?";
             Note($"Check started: plugin v{asmVersion}, refresh={forceRefresh}, plan={config.StoragePlanSizeGB} GB, " +
+                 $"outsideLibrary={config.StorageUsedOutsideLibraryGB} GB, " +
                  $"sonarrUrl={(string.IsNullOrWhiteSpace(config.SonarrUrl) ? "-" : "set")}, radarrUrl={(string.IsNullOrWhiteSpace(config.RadarrUrl) ? "-" : "set")}.");
 
             var slotUser = DetectSlotUsername();
@@ -143,7 +144,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 if (usage.TotalBytes > 0)
                 {
                     long planTotal = (long)(config.StoragePlanSizeGB * 1024L * 1024L * 1024L);
-                    long planFree = Math.Max(0, planTotal - usage.TotalBytes);
+                    long outsideUsed = (long)(config.StorageUsedOutsideLibraryGB * 1024L * 1024L * 1024L);
+                    long planFree = Math.Max(0, planTotal - usage.TotalBytes - outsideUsed);
                     planDisk = new DiskSpaceItem
                     {
                         Path = "Media Library",
@@ -153,7 +155,9 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     };
                     primarySource = "Library Estimate (Plan)";
                     allDisks.Add(planDisk);
-                    Note($"Plan-based estimate: {usage.ItemCount} media items use {FormatBytes(usage.TotalBytes)} of a {FormatBytes(planTotal)} plan → {FormatBytes(planFree)} free ({usage.Method}). Non-library files are not counted.");
+                    Note($"Plan-based estimate: {usage.ItemCount} media items use {FormatBytes(usage.TotalBytes)} of a {FormatBytes(planTotal)} plan" +
+                         (outsideUsed > 0 ? $" plus {FormatBytes(outsideUsed)} outside the library" : "") +
+                         $" → {FormatBytes(planFree)} free ({usage.Method}).");
                     if (usage.IsStrmLike)
                     {
                         Note("WARNING: item sizes look like .strm placeholder files. If your media is streamed (debrid/cloud), local sizes cannot reflect it — compare with your slot's disk usage panel.");

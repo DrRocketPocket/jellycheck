@@ -622,6 +622,16 @@
                 </div>
             </div>
 
+            <div class="jc-field-row">
+                <div class="jc-field-label">
+                    <strong>Used Outside Library (GB)</strong>
+                    <small>Space taken by files Jellyfin cannot see: seeding torrents, active downloads, app data and other slot files. Check your provider's disk usage panel — set this so the storage bar matches the panel's free space. Example: panel shows 6&nbsp;TB total, 4.3&nbsp;TB in Jellyfin, 56&nbsp;GB free → enter about 1650.</small>
+                </div>
+                <div class="jc-field-input">
+                    <input type="number" id="jc-StorageUsedOutsideLibraryGB" min="0" step="1" placeholder="e.g. 1650" style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e0e0e0;padding:8px 12px;width:140px;">
+                </div>
+            </div>
+
             <hr class="jc-section-divider">
 
             <!-- Notifications -->
@@ -878,6 +888,7 @@
                 setVal('jc-OverseerrApiKey',           getProp(cfg, 'OverseerrApiKey'));
                 setVal('jc-ShowStorageOnHomePage',     getProp(cfg, 'ShowStorageOnHomePage') !== false);
                 setVal('jc-StoragePlanSizeGB',         getProp(cfg, 'StoragePlanSizeGB') || '');
+                setVal('jc-StorageUsedOutsideLibraryGB', getProp(cfg, 'StorageUsedOutsideLibraryGB') || '');
                 setVal('jc-NotifyUsersBeforeDeletion', getProp(cfg, 'NotifyUsersBeforeDeletion'));
                 setVal('jc-NotifyDaysBeforeDeletion',  getProp(cfg, 'NotifyDaysBeforeDeletion'));
             }
