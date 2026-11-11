@@ -83,6 +83,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 {
                     if (_cachedStorage != null && DateTime.UtcNow < _cacheExpires)
                     {
+                        _logger?.LogInformation("[Jellycheck/Storage] Serving cached result (source={Source}).", _cachedStorage.Source);
                         return _cachedStorage;
                     }
                 }
@@ -94,10 +95,22 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             string primarySource = "None";
             string statusMessage = string.Empty;
 
+            // Diagnostic trace — every line goes to the Jellyfin log with the
+            // [Jellycheck/Storage] prefix so support can follow one check end-to-end.
+            void Note(string msg)
+            {
+                diag.Add(msg);
+                _logger?.LogInformation("[Jellycheck/Storage] {Msg}", msg);
+            }
+
+            var asmVersion = typeof(StorageService).Assembly.GetName().Version?.ToString() ?? "?";
+            Note($"Check started: plugin v{asmVersion}, refresh={forceRefresh}, plan={config.StoragePlanSizeGB} GB, " +
+                 $"sonarrUrl={(string.IsNullOrWhiteSpace(config.SonarrUrl) ? "-" : "set")}, radarrUrl={(string.IsNullOrWhiteSpace(config.RadarrUrl) ? "-" : "set")}.");
+
             var slotUser = DetectSlotUsername();
             if (!string.IsNullOrEmpty(slotUser))
             {
-                diag.Add($"Detected environment user: '{slotUser}'.");
+                Note($"Detected environment user: '{slotUser}'.");
             }
 
             // ── Tier 1: Ultra.cc / Linux System Quota (quota -s) ───────────────
@@ -105,7 +118,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             // (e.g. 136 GB free of 6,000 GB), whereas Radarr only sees the physical 14.5 TB shared array.
             DiskSpaceItem? quotaDisk = null;
             var (qDisk, quotaLog) = await TryGetSystemQuotaAsync(slotUser).ConfigureAwait(false);
-            diag.Add(quotaLog);
+            Note(quotaLog);
             if (qDisk != null && qDisk.TotalSpace > 0)
             {
                 quotaDisk = qDisk;
@@ -121,7 +134,11 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             DiskSpaceItem? planDisk = null;
             if (quotaDisk == null && config.StoragePlanSizeGB > 0)
             {
-                diag.Add($"Plan size setting: {config.StoragePlanSizeGB} GB.");
+                Note($"Plan size setting: {config.StoragePlanSizeGB} GB.");
+                if (_libraryManager == null)
+                {
+                    Note("LibraryManager is NOT available to the storage service — cannot measure library usage.");
+                }
                 var usage = TryGetLibraryUsage();
                 if (usage.TotalBytes > 0)
                 {
@@ -136,15 +153,16 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     };
                     primarySource = "Library Estimate (Plan)";
                     allDisks.Add(planDisk);
-                    diag.Add($"Plan-based estimate: {usage.ItemCount} media items use {FormatBytes(usage.TotalBytes)} of a {FormatBytes(planTotal)} plan → {FormatBytes(planFree)} free ({usage.Method}). Non-library files are not counted.");
+                    Note($"Plan-based estimate: {usage.ItemCount} media items use {FormatBytes(usage.TotalBytes)} of a {FormatBytes(planTotal)} plan → {FormatBytes(planFree)} free ({usage.Method}). Non-library files are not counted.");
                     if (usage.IsStrmLike)
                     {
-                        diag.Add("WARNING: item sizes look like .strm placeholder files. If your media is streamed (debrid/cloud), local sizes cannot reflect it — compare with your slot's disk usage panel.");
+                        Note("WARNING: item sizes look like .strm placeholder files. If your media is streamed (debrid/cloud), local sizes cannot reflect it — compare with your slot's disk usage panel.");
                     }
                 }
                 else
                 {
-                    diag.Add($"Plan size is configured but no usable media sizes were found ({usage.ItemCount} items scanned, {usage.ItemsWithSize} had recorded sizes).");
+                    Note($"Plan size is configured but no usable media sizes were found ({usage.ItemCount} items scanned, {usage.ItemsWithSize} had recorded sizes).");
+                    LogLibraryFolderState(Note);
                 }
             }
 
@@ -156,7 +174,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             {
                 if (string.IsNullOrWhiteSpace(config.SonarrApiKey))
                 {
-                    diag.Add($"Sonarr URL is configured ({config.SonarrUrl}) but API Key is empty.");
+                    Note($"Sonarr URL is configured ({config.SonarrUrl}) but API Key is empty.");
                 }
                 else
                 {
@@ -177,9 +195,9 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 var discovered = TryAutoDiscoverApp("Sonarr", slotUser);
                 if (discovered != null)
                 {
-                    diag.Add($"Auto-discovered local Sonarr at {discovered.Value.Url}. Testing...");
+                    Note($"Auto-discovered local Sonarr at {discovered.Value.Url}. Testing...");
                     var (localDisks, localLog) = await _sonarr.GetDiskSpaceWithLogAsync(discovered.Value.Url, discovered.Value.ApiKey).ConfigureAwait(false);
-                    diag.Add("Local slot " + localLog);
+                    Note("Local slot " + localLog);
                     if (localDisks != null && localDisks.Count > 0)
                     {
                         if (primarySource == "None") primarySource = "Sonarr (Local slot)";
@@ -196,7 +214,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             {
                 if (string.IsNullOrWhiteSpace(config.RadarrApiKey))
                 {
-                    diag.Add($"Radarr URL is configured ({config.RadarrUrl}) but API Key is empty.");
+                    Note($"Radarr URL is configured ({config.RadarrUrl}) but API Key is empty.");
                 }
                 else
                 {
@@ -221,7 +239,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 {
                     diag.Add($"Auto-discovered local Radarr at {discovered.Value.Url}. Testing...");
                     var (localDisks, localLog) = await _radarr.GetDiskSpaceWithLogAsync(discovered.Value.Url, discovered.Value.ApiKey).ConfigureAwait(false);
-                    diag.Add("Local slot " + localLog);
+                    Note("Local slot " + localLog);
                     if (localDisks != null && localDisks.Count > 0)
                     {
                         if (primarySource == "None") primarySource = "Radarr (Local slot)";
@@ -251,7 +269,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                                         var dInfo = GetDriveInfoForPath(loc);
                                         if (dInfo != null && dInfo.TotalSize > 0)
                                         {
-                                            diag.Add($"Detected media folder '{loc}': {FormatBytes(dInfo.AvailableFreeSpace)} free of {FormatBytes(dInfo.TotalSize)}.");
+                                            Note($"Detected media folder '{loc}': {FormatBytes(dInfo.AvailableFreeSpace)} free of {FormatBytes(dInfo.TotalSize)}.");
                                             primarySource = "Jellyfin Media Library";
                                             AddIfDistinct(allDisks, new DiskSpaceItem
                                             {
@@ -264,7 +282,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                                     }
                                     catch (Exception ex)
                                     {
-                                        diag.Add($"DriveInfo on '{loc}' failed: {ex.Message}");
+                                        Note($"DriveInfo on '{loc}' failed: {ex.Message}");
                                     }
                                 }
                             }
@@ -282,7 +300,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                                 var dInfo = GetDriveInfoForPath(dataPath);
                                 if (dInfo != null && dInfo.TotalSize > 0)
                                 {
-                                    diag.Add($"Detected server data drive: {FormatBytes(dInfo.AvailableFreeSpace)} free of {FormatBytes(dInfo.TotalSize)}.");
+                                    Note($"Detected server data drive: {FormatBytes(dInfo.AvailableFreeSpace)} free of {FormatBytes(dInfo.TotalSize)}.");
                                     primarySource = "Server Storage";
                                     allDisks.Add(new DiskSpaceItem
                                     {
@@ -295,7 +313,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                             }
                             catch (Exception ex)
                             {
-                                diag.Add($"DataPath DriveInfo failed: {ex.Message}");
+                                Note($"DataPath DriveInfo failed: {ex.Message}");
                             }
                         }
                     }
@@ -313,7 +331,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                         if (hostDrives.Count > 0)
                         {
                             var bestDrive = hostDrives.OrderByDescending(d => d.TotalSize).First();
-                            diag.Add($"Detected host drive: {FormatBytes(bestDrive.AvailableFreeSpace)} free of {FormatBytes(bestDrive.TotalSize)}.");
+                            Note($"Detected host drive: {FormatBytes(bestDrive.AvailableFreeSpace)} free of {FormatBytes(bestDrive.TotalSize)}.");
                             primarySource = "Host Storage";
                             allDisks.Add(new DiskSpaceItem
                             {
@@ -328,7 +346,7 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 catch (Exception ex)
                 {
                     _logger?.LogWarning(ex, "[Jellycheck/Storage] Failed to read local drive information.");
-                    diag.Add($"Local filesystem check error: {ex.Message}");
+                    Note($"Local filesystem check error: {ex.Message}");
                 }
             }
 
@@ -401,6 +419,8 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                 }).ToList()
             };
 
+            Note($"RESULT: source='{primarySource}', total={totalSpace} bytes ({FormatBytes(totalSpace)}), free={freeSpace} bytes, message='{statusMessage}'.");
+
             lock (_cacheLock)
             {
                 _cachedStorage = result;
@@ -410,6 +430,38 @@ namespace Jellyfin.Plugin.Jellycheck.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Logs every configured library and whether its folder is visible to the
+        /// Jellyfin process — pinpoints permission/mount issues at a glance.
+        /// </summary>
+        private void LogLibraryFolderState(System.Action<string> note)
+        {
+            try
+            {
+                if (_libraryManager == null) return;
+                var folders = _libraryManager.GetVirtualFolders();
+                if (folders.Count == 0)
+                {
+                    note("No libraries are configured in Jellyfin at all.");
+                    return;
+                }
+                foreach (var vf in folders)
+                {
+                    foreach (var loc in vf.Locations)
+                    {
+                        string state;
+                        try { state = Directory.Exists(loc) ? "exists" : "NOT ACCESSIBLE"; }
+                        catch (Exception ex) { state = "error: " + ex.Message; }
+                        note($"Library '{vf.Name}' → '{loc}' ({state}).");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                note("Could not enumerate libraries: " + ex.Message);
+            }
         }
 
         /// <summary>Result of the library usage scan used for the plan-based estimate.</summary>
@@ -487,13 +539,22 @@ namespace Jellyfin.Plugin.Jellycheck.Services
                     {
                         foreach (var loc in vf.Locations)
                         {
-                            if (string.IsNullOrEmpty(loc) || !Directory.Exists(loc)) continue;
+                            if (string.IsNullOrEmpty(loc) || !Directory.Exists(loc))
+                            {
+                                _logger?.LogInformation("[Jellycheck/Storage] Disk scan skipped '{Loc}' (missing or inaccessible).", loc);
+                                continue;
+                            }
+                            long locTotal = 0;
+                            int locFiles = 0;
                             var dir = new DirectoryInfo(loc);
                             foreach (var fi in dir.EnumerateFiles("*", SearchOption.AllDirectories))
                             {
                                 diskTotal += fi.Length;
                                 fileCount++;
+                                locTotal += fi.Length;
+                                locFiles++;
                             }
+                            _logger?.LogInformation("[Jellycheck/Storage] Disk scan '{Loc}': {Files} files, {Size}.", loc, locFiles, FormatBytes(locTotal));
                         }
                     }
                 }

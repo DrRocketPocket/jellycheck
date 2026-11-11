@@ -243,7 +243,11 @@ namespace Jellyfin.Plugin.Jellycheck.Controllers
 
             try
             {
+                _logger.LogInformation("[Jellycheck/Storage] API request received (refresh={Refresh}, plugin v{Version}).",
+                    refresh, typeof(WatchedStatusController).Assembly.GetName().Version);
                 var storageInfo = await _storageService.GetStorageAsync(refresh).ConfigureAwait(false);
+                _logger.LogInformation("[Jellycheck/Storage] API responding: source='{Source}', total={Total} bytes, message='{Message}'.",
+                    storageInfo.Source, storageInfo.TotalSpace, storageInfo.Message ?? "");
                 return Ok(storageInfo);
             }
             catch (Exception ex)
