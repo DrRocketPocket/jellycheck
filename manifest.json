@@ -12,7 +12,7 @@
         "changelog": "Disable caching of all plugin API responses and cache-bust every client fetch. A reverse proxy or browser could previously serve a stale storage failure forever, making the plugin look broken even after fixes.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.23/Jellycheck-10.11.zip",
-        "checksum": "5f309255933aaff118d82acc25dff7c7",
+        "checksum": "25e5382faf8a65de0caf3d4a2269aebc",
         "timestamp": "2026-11-11 20:00:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Disable caching of all plugin API responses and cache-bust every client fetch. A reverse proxy or browser could previously serve a stale storage failure forever, making the plugin look broken even after fixes.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.23/Jellycheck-10.8.zip",
-        "checksum": "79abc40a3da4576deb3055b1616b1a23",
+        "checksum": "5250e4f12fd266146d28219e440ed967",
         "timestamp": "2026-11-11 20:00:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Disable caching of all plugin API responses and cache-bust every client fetch. A reverse proxy or browser could previously serve a stale storage failure forever, making the plugin look broken even after fixes.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.23/Jellycheck-10.8.zip",
-        "checksum": "79abc40a3da4576deb3055b1616b1a23",
+        "checksum": "5250e4f12fd266146d28219e440ed967",
         "timestamp": "2026-11-11 20:00:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Disable caching of all plugin API responses and cache-bust every client fetch. A reverse proxy or browser could previously serve a stale storage failure forever, making the plugin look broken even after fixes.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.23/Jellycheck-10.8.zip",
-        "checksum": "79abc40a3da4576deb3055b1616b1a23",
+        "checksum": "5250e4f12fd266146d28219e440ed967",
         "timestamp": "2026-11-11 20:00:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Disable caching of all plugin API responses and cache-bust every client fetch. A reverse proxy or browser could previously serve a stale storage failure forever, making the plugin look broken even after fixes.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.23/Jellycheck-10.8.zip",
-        "checksum": "79abc40a3da4576deb3055b1616b1a23",
+        "checksum": "5250e4f12fd266146d28219e440ed967",
         "timestamp": "2026-11-11 20:00:00"
       }
     ]
