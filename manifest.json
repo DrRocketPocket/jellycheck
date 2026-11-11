@@ -12,7 +12,7 @@
         "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.11.zip",
-        "checksum": "25e5382faf8a65de0caf3d4a2269aebc",
+        "checksum": "a671e386ba76e990922dd80ce993169c",
         "timestamp": "2026-11-11 21:00:00"
       },
       {
@@ -20,7 +20,7 @@
         "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
         "targetAbi": "10.10.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
-        "checksum": "5250e4f12fd266146d28219e440ed967",
+        "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
         "timestamp": "2026-11-11 21:00:00"
       },
       {
@@ -28,7 +28,7 @@
         "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
         "targetAbi": "10.9.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
-        "checksum": "5250e4f12fd266146d28219e440ed967",
+        "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
         "timestamp": "2026-11-11 21:00:00"
       },
       {
@@ -36,7 +36,7 @@
         "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
         "targetAbi": "10.8.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
-        "checksum": "5250e4f12fd266146d28219e440ed967",
+        "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
         "timestamp": "2026-11-11 21:00:00"
       },
       {
@@ -44,7 +44,7 @@
         "changelog": "Full diagnostic logging: every storage check now writes an end-to-end trace to the Jellyfin log ([Jellycheck/Storage] lines) \u2014 plugin version, config as seen by the plugin, each tier attempted, library folder accessibility, disk-scan results and the final result.",
         "targetAbi": "10.7.0.0",
         "sourceUrl": "https://github.com/DrRocketPocket/jellycheck/releases/download/v1.0.0.24/Jellycheck-10.8.zip",
-        "checksum": "5250e4f12fd266146d28219e440ed967",
+        "checksum": "0dc393a2fcd7d1381b1bb3573cdf1549",
         "timestamp": "2026-11-11 21:00:00"
       }
     ]
