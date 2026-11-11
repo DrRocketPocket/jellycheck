@@ -248,6 +248,23 @@
         }
     }
 
+    function normalizeStorageKeys(data) {
+        if (!data || typeof data !== 'object') return data;
+        const lower = {};
+        for (const k in data) {
+            lower[k.charAt(0).toLowerCase() + k.slice(1)] = data[k];
+        }
+        if (Array.isArray(lower.disks)) {
+            lower.disks = lower.disks.map(d => {
+                if (!d || typeof d !== 'object') return d;
+                const nd = {};
+                for (const k in d) nd[k.charAt(0).toLowerCase() + k.slice(1)] = d[k];
+                return nd;
+            });
+        }
+        return lower;
+    }
+
     async function fetchStorageData(force = false) {
         if (isFetchingStorage) return;
         if (!force && Date.now() - lastStorageFetch < 60000 && storageData) {
@@ -276,7 +293,7 @@
             }
 
             if (data) {
-                storageData = data;
+                storageData = normalizeStorageKeys(data);
                 lastStorageFetch = Date.now();
                 updateStorageBar();
             }

@@ -748,7 +748,14 @@
                 var freeEl = document.getElementById('jc-storage-free-val');
                 if (freeEl && forceRefresh) freeEl.innerText = 'Checking...';
 
-                function handleData(data) {
+                function handleData(rawData) {
+                    // Accept both camelCase and PascalCase JSON keys
+                    var data = rawData;
+                    if (data && typeof data === 'object') {
+                        var norm = {};
+                        for (var k in data) norm[k.charAt(0).toLowerCase() + k.slice(1)] = data[k];
+                        data = norm;
+                    }
                     var freeEl = document.getElementById('jc-storage-free-val');
                     var totalEl = document.getElementById('jc-storage-total-val');
                     var sourceEl = document.getElementById('jc-storage-source-val');
